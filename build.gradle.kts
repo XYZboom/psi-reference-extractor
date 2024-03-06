@@ -6,6 +6,11 @@ plugins {
 group = "com.github.xyzboom"
 version = "1.0.0-SNAPSHOT"
 
+tasks.register<Jar>("sourcesJar") {
+    from(sourceSets["main"].allSource)
+    archiveClassifier.set("sources")
+}
+
 publishing {
     publications {
         // 配置发布的库
@@ -17,7 +22,8 @@ publishing {
 
             // 配置发布的产物
             from(components["java"])
-
+            artifact(tasks["jar"])
+            artifact(tasks["sourcesJar"])
             // 配置发布的元数据
             pom {
                 // 设置项目的元数据信息
@@ -50,20 +56,31 @@ publishing {
         maven {
             url = uri("https://maven.pkg.github.com/xyzboom/psi-reference-extractor")
             credentials {
-                // 配置访问仓库所需的凭据
-                println(System.getenv("GITHUB_ACTOR"))
                 username = System.getenv("GITHUB_ACTOR")
                 password = System.getenv("GITHUB_TOKEN")
             }
         }
     }
 }
-
-repositories {
-    mavenCentral()
+allprojects {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven("https://www.jetbrains.com/intellij-repository/releases")
+    }
 }
 
 dependencies {
+    api(project(":intellij-core"))
+    implementation("org.jetbrains:annotations:24.0.0")
+    implementation(project(":kt-references-analysis:analysis-api"))
+    implementation(project(":kt-references-analysis:analysis-api-fe10"))
+    implementation(project(":kt-references-analysis:analysis-api-impl-base"))
+    implementation(project(":kt-references-analysis:analysis-internal-utils"))
+    implementation(project(":kt-references-analysis:kt-references-fe10"))
+    implementation(project(":kt-references-analysis:project-structure"))
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
+    testImplementation("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 }
 
