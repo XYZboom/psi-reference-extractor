@@ -24,7 +24,7 @@ publishing {
             from(components["java"])
             artifact(tasks["jar"])
             artifact(tasks["sourcesJar"]) {
-                classifier = "source"
+                classifier = "sources"
             }
             // 配置发布的元数据
             pom {
