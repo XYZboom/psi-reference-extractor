@@ -2,7 +2,7 @@ plugins {
     `java-library`
 }
 
-val intellijVersion = "213.7172.53"
+val intellijVersion = "232.10300.40"
 
 //https://jetbrains.team/p/ij/repositories/intellij/files/aea53cfc5d27b15246ab7b7a0b5679d0d8cf1875/community/build/groovy/org/jetbrains/intellij/build/IntelliJCoreArtifactsBuilder.groovy?tab=source&line=18
 //CORE_MODULES = [

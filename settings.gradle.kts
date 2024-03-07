@@ -12,3 +12,4 @@ include(
     ":kt-references-analysis:project-structure",
     ":intellij-core",
 )
+include("test-framework")
