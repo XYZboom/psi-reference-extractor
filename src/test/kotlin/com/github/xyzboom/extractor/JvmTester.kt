@@ -138,7 +138,11 @@ open class JvmTester {
         val targetElement =
             targetFile!!.findElementAt(targetStart!!.endOffset)?.parentRangeIn(targetStart!!, targetEnd!!)
                 ?: fail("could not find target element")
-        assertEquals(engine.eval(File(scriptPath).readText()), sourceElement.reference?.referenceInfo)
+        val resultText = File(scriptPath).readText()
+        assertEquals(
+            engine.eval("createReferenceInfo(${resultText.split(" ").joinToString()})"),
+            sourceElement.reference?.referenceInfo
+        )
     }
 
     //<editor-fold desc="setup Env">
@@ -296,6 +300,17 @@ open class JvmTester {
             engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE)
             engine.eval("import com.github.xyzboom.extractor.ReferenceInfo")
             engine.eval("import com.github.xyzboom.extractor.types.*")
+            engine.eval("import com.intellij.lang.Language")
+            engine.eval(
+                """
+                |fun createReferenceInfo(
+                |   sourceLanguage: Language, sourceType: IReferenceSourceType,
+                |   targetLanguage: Language?, targetType: IReferenceTargetType?
+                |): ReferenceInfo {
+                |   return ReferenceInfo(sourceLanguage, targetLanguage, sourceType, targetType)
+                |}
+            """.trimMargin()
+            )
         }
 
     }

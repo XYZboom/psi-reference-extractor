@@ -9,7 +9,7 @@ object JvmTestGenerator {
 
     private const val TEST_DATA_PATH = "src/testData/jvm/"
     private const val TEST_OUTPUT_PATH = "src/test/kotlin/com/github/xyzboom/extractor/generated/JvmTest.kt"
-    private const val SCRIPTS_NAME = "predict.kts"
+    private const val RESULT_FILE_NAME = "result"
     private fun StringBuilder.appendEachTest(dir: File) {
         var testName = dir.path.replace(File.separator, "_").replace("src_testData", "test")
         if (testName.first().isDigit()) {
@@ -20,7 +20,7 @@ object JvmTestGenerator {
             |@Test
             |fun $testName() {
             |    initCompilerEnv(Path.of(${"\"\"\""}${dir.path}${"\"\"\""}))
-            |    doValidate(${"\"\"\""}${Path(dir.path, SCRIPTS_NAME)}${"\"\"\""})
+            |    doValidate(${"\"\"\""}${Path(dir.path, RESULT_FILE_NAME)}${"\"\"\""})
             |}
         """.replaceIndentByMargin(" " * 4)
         )
@@ -45,7 +45,7 @@ object JvmTestGenerator {
         """.trimMargin()
         )
         val testPath = File(TEST_DATA_PATH)
-        val fileTreeWalk = testPath.walkTopDown().filter { it.isDirectory && File(it, "predict.kts").exists() }
+        val fileTreeWalk = testPath.walkTopDown().filter { it.isDirectory && File(it, RESULT_FILE_NAME).exists() }
         fileTreeWalk.forEach {
             logger.info { it }
             sb.appendEachTest(it)
