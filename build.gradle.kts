@@ -71,6 +71,9 @@ allprojects {
 }
 
 dependencies {
+    implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
+    implementation("org.slf4j:slf4j-api:2.0.12")
+    runtimeOnly("ch.qos.logback:logback-classic:1.4.14")
     api(project(":intellij-core"))
     implementation("org.jetbrains:annotations:24.0.0")
     implementation(project(":kt-references-analysis:analysis-api"))
@@ -81,7 +84,9 @@ dependencies {
     implementation(project(":kt-references-analysis:project-structure"))
     compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
     testImplementation("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
-    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
+    testRuntimeOnly("org.jetbrains.kotlin:kotlin-scripting-jsr223-unshaded:1.9.22")
 }
 
 tasks.test {

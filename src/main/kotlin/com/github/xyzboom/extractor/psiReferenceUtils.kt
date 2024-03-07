@@ -1,33 +1,63 @@
 package com.github.xyzboom.extractor
 
-import com.github.xyzboom.extractor.types.IReferenceType
-import org.jetbrains.kotlin.idea.references.KtReference
-import org.jetbrains.kotlin.references.fe10.*
-import org.jetbrains.kotlin.references.fe10.base.KtFe10Reference
+import com.github.xyzboom.extractor.ReferenceInfo.Companion.UNKNOWN
+import com.github.xyzboom.extractor.types.Call
+import com.github.xyzboom.extractor.types.Method
+import com.github.xyzboom.extractor.types.Property
+import com.intellij.lang.java.JavaLanguage
+import com.intellij.openapi.util.Key
+import com.intellij.psi.PsiReference
+import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.idea.references.*
+import org.jetbrains.kotlin.psi.KtDestructuringDeclarationEntry
+
+private const val KeyName = "KeyReferenceInfo\$Extractor"
+private val referenceInfoUserDataKey = Key.create<ReferenceInfo>(KeyName)
 
 @Suppress("Unused")
-val KtReference.referenceType: IReferenceType
+val PsiReference.referenceInfo: ReferenceInfo
     get() {
-        if (this !is KtFe10Reference) {
-            throw ExtractorException(
-                "Unsupported Kotlin reference type: ${this::class.java}," +
-                        "  ${KtFe10Reference::class.simpleName}"
-            )
+        val source = element
+        val data = source.getUserData(referenceInfoUserDataKey)
+        if (data != null) return data
+        val referenceInfo = if (this is KtReference) {
+             referenceInfo
+        } else UNKNOWN
+        if (referenceInfo !== UNKNOWN) {
+            source.putUserData(referenceInfoUserDataKey, referenceInfo)
+            return referenceInfo
         }
-
-        when (this) {
-            is Fe10KDocReference -> {}
-            is Fe10SyntheticPropertyAccessorReference -> {}
-            is KtFe10ArrayAccessReference -> {}
-            is KtFe10CollectionLiteralReference -> {}
-            is KtFe10ConstructorDelegationReference -> {}
-            is KtFe10DestructuringDeclarationEntry -> {}
-            is KtFe10ForLoopInReference -> {}
-            is KtFe10InvokeFunctionReference -> {}
-            is KtFe10PropertyDelegationMethodsReference -> {}
-            is KtFe10SimpleNameReference -> {}
-            else -> throw ExtractorException("something wrong here!")
-        }
-        TODO()
+        return UNKNOWN
     }
 
+val KtReference.referenceInfo: ReferenceInfo
+    get() =
+        when (this) {
+            is KDocReference -> UNKNOWN
+            is SyntheticPropertyAccessorReference -> referenceInfo
+            is KtArrayAccessReference -> UNKNOWN
+            is KtCollectionLiteralReference -> UNKNOWN
+            is KtConstructorDelegationReference -> UNKNOWN
+            is KtDestructuringDeclarationEntry -> UNKNOWN
+            is KtForLoopInReference -> UNKNOWN
+            is KtInvokeFunctionReference -> UNKNOWN
+            is KtPropertyDelegationMethodsReference -> UNKNOWN
+            is KtSimpleNameReference -> UNKNOWN
+            else -> throw ExtractorException("Unsupported reference type: ${this::class.java}")
+        }
+
+private inline val SyntheticPropertyAccessorReference.referenceInfo: ReferenceInfo
+    get() {
+        val target = resolve()
+        if (target != null) {
+            val targetLanguage = target.language
+            if (targetLanguage === JavaLanguage.INSTANCE) {
+                return ReferenceInfo(KotlinLanguage.INSTANCE, JavaLanguage.INSTANCE, Property, Method)
+            } else if (targetLanguage === KotlinLanguage.INSTANCE) {
+                return ReferenceInfo(KotlinLanguage.INSTANCE, KotlinLanguage.INSTANCE, Property, Property)
+            }
+            return UNKNOWN
+        } else {
+            return UNKNOWN
+        }
+    }
