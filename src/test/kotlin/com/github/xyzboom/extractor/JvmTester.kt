@@ -12,6 +12,7 @@ import com.intellij.psi.*
 import com.intellij.psi.util.prevLeaf
 import org.jetbrains.kotlin.analysis.api.descriptors.references.ReadWriteAccessCheckerDescriptorsImpl
 import org.jetbrains.kotlin.analysis.api.impl.base.references.HLApiReferenceProviderService
+import org.jetbrains.kotlin.asJava.elements.KtLightElement
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.config.addKotlinSourceRoots
 import org.jetbrains.kotlin.cli.common.environment.setIdeaIoUseFallback
@@ -37,7 +38,7 @@ import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.lazy.declarations.FileBasedDeclarationProviderFactory
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.fail
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import java.io.File
 import java.io.PrintStream
 import java.nio.file.Path
@@ -101,9 +102,10 @@ open class JvmTester {
         }
     }
 
-    fun PsiElement.parentRangeIn(start: PsiElement, end: PsiElement): PsiElement? {
+    fun PsiElement.parentRangeIn(start: PsiElement, end: PsiElement, needReference: Boolean = false): PsiElement? {
         if ((firstChild === start || prevLeaf() === start)
             && (lastChild === end || nextLeaf() === end)
+            && (!needReference || references.isNotEmpty())
         ) return this
         if (parent == null || parent is PsiFile) return null
         return parent.parentRangeIn(start, end)
@@ -133,11 +135,18 @@ open class JvmTester {
                     && sourceFile != null && targetFile != null
         ) { "no source or target in test files!" }
         val sourceElement =
-            sourceFile!!.findElementAt(sourceStart!!.endOffset)?.parentRangeIn(sourceStart!!, sourceEnd!!)
+            sourceFile!!.findElementAt(sourceStart!!.endOffset)?.parentRangeIn(sourceStart!!, sourceEnd!!, true)
                 ?: fail("could not find source element")
         val targetElement =
             targetFile!!.findElementAt(targetStart!!.endOffset)?.parentRangeIn(targetStart!!, targetEnd!!)
                 ?: fail("could not find target element")
+        val resolved = sourceElement.reference?.resolve()
+        if (targetElement !== resolved) {
+            if (resolved !is KtLightElement<*, *>) {
+                fail("resolved reference must be target element")
+            }
+            assertEquals(targetElement, resolved.kotlinOrigin, "resolved reference must be target element")
+        }
         val resultText = File(scriptPath).readText()
         assertEquals(
             engine.eval("createReferenceInfo(${resultText.split(" ").joinToString()})"),
@@ -160,12 +169,15 @@ open class JvmTester {
             environment,
             environment.getSourceFiles()
         )
+        DummyKtFe10ReferenceResolutionHelper.bindingContext = bindingContext
         val application = ApplicationManager.getApplication()
-        val resolutionHelper = DummyKtFe10ReferenceResolutionHelper(bindingContext)
-        (application as MockApplication).registerService(
-            KtFe10ReferenceResolutionHelper::class.java,
-            resolutionHelper
-        )
+        val resolutionHelper = DummyKtFe10ReferenceResolutionHelper
+        if (application.getService(KtFe10ReferenceResolutionHelper::class.java) == null) {
+            (application as MockApplication).registerService(
+                KtFe10ReferenceResolutionHelper::class.java,
+                resolutionHelper
+            )
+        }
     }
 
     private fun createKotlinCoreEnvironment(
@@ -289,7 +301,7 @@ open class JvmTester {
 
         @JvmStatic
         @BeforeAll
-        fun setUpScriptEngine() {
+        fun setUpTestContext() {
             engine = ScriptEngineManager().getEngineByExtension("kts")!!
             val path = ReferenceInfo::class.java.protectionDomain.codeSource.location.path
             engine.eval("System.setProperty(\"kotlin.script.classpath\", \"$path\")")

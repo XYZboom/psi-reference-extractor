@@ -32,6 +32,6 @@ val generateJvmTest = tasks.create<JavaExec>("GenerateJvmTest") {
     systemProperty("line.separator", "\n")
 }
 
-tasks.withType<Test> {
+rootProject.tasks.withType<Test> {
     dependsOn(generateJvmTest)
 }

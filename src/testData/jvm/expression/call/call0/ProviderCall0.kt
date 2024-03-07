@@ -5,7 +5,7 @@ class ProviderCall0 {
         return "func0"
     }
 
-    fun func1(arg0: Int): Int {
+    /*<target>*/fun func1(arg0: Int): Int {
         return arg0
-    }
+    }/*<target/>*/
 }

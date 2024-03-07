@@ -1,7 +1,7 @@
 package expression.call.call7
 
 class ProviderCall7 {
-    fun func() {
+    /*<target>*/fun func() {
 
-    }
+    }/*<target/>*/
 }

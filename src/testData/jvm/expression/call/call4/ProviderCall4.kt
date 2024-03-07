@@ -1,5 +1,5 @@
 package expression.call.call4
 
-fun func() {
+/*<target>*/fun func() {
     println("func")
-}
+}/*<target/>*/

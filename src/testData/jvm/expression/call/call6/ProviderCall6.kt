@@ -1,5 +1,5 @@
 package expression.call.call6
 
-fun provider() {
+/*<target>*/fun provider() {
 
-}
+}/*<target/>*/
