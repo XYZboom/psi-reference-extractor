@@ -66,4 +66,16 @@ class JvmReferenceInfoTest: BaseJvmReferenceInfoTester() {
         doValidate("""src\testData\jvm\expression\call\call9\result""")
     }
     
+    @Test
+    fun test_jvm_expression_call_JavaCallKotlinToplevel0() {
+        initCompilerEnv(Path.of("""src\testData\jvm\expression\call\JavaCallKotlinToplevel0"""))
+        doValidate("""src\testData\jvm\expression\call\JavaCallKotlinToplevel0\result""")
+    }
+    
+    @Test
+    fun test_jvm_import_import0() {
+        initCompilerEnv(Path.of("""src\testData\jvm\import\import0"""))
+        doValidate("""src\testData\jvm\import\import0\result""")
+    }
+    
 }

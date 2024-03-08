@@ -1,14 +1,18 @@
 # Reference Source Types
 
+List of reference types from the perspective of the source element.
+
 - [Import](##Import)
 - [Call](##Call)
 - [Property](##Property)
 
 ## Import
 
-Reference that located at import list.
+Reference whose source located at import list.
 
 ### Code Samples
+
+### Java import Java class
 
 ```java
 // Source.java
@@ -26,15 +30,13 @@ public class Target {}
 // reference above targets here and has the target type "class"
 ```
 
-
-
 ## Call
 
-Reference that located at call expression.
+Reference whose source located at call expression.
 
 ### Code Samples
 
-#### Java call Java or Kotlin method
+#### Java call Java method
 
 ```java
 // Source.java
@@ -58,12 +60,12 @@ package target;
 public class Target {
     public void func() {}
 //  ^^^^^^^^^^^^^^^^^^^^^
-//  reference above targets here and has the target type "call"
+//  reference above targets here and has the target type "method"
 //  same situation in kotlin method
 }
 ```
 
-#### Java call Kotlin property (source call)
+#### Java call Kotlin property
 
 ```java
 // Source.java
@@ -94,7 +96,7 @@ class Target {
 
 ## Property
 
-Reference located at property access expression.
+Reference whose source at property access expression.
 
 ### Code Samples
 
@@ -103,7 +105,7 @@ Reference located at property access expression.
 ```kotlin
 // Source.kt
 package source
-import target.Target;
+import target.Target
 fun func() {
     val target = Target()
     target.string
@@ -122,6 +124,3 @@ class Target {
 }
 ```
 
-#### Java call Kotlin property (target property)
-
-see at [Java call Kotlin property](####Java call Kotlin property (source call))

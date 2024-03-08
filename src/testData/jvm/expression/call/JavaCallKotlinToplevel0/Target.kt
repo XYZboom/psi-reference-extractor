@@ -1,0 +1,3 @@
+/*<target>*/fun func() {
+
+}/*<target/>*/

@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
 import org.jetbrains.kotlin.psi.psiUtil.nextLeaf
+import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.references.fe10.base.DummyKtFe10ReferenceResolutionHelper
 import org.jetbrains.kotlin.references.fe10.base.KtFe10KotlinReferenceProviderContributor
 import org.jetbrains.kotlin.references.fe10.base.KtFe10ReferenceResolutionHelper
@@ -39,6 +40,7 @@ import org.jetbrains.kotlin.resolve.lazy.declarations.FileBasedDeclarationProvid
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.fail
 import org.junit.jupiter.api.Assertions.*
+import org.opentest4j.AssertionFailedError
 import java.io.File
 import java.io.PrintStream
 import java.nio.file.Path
@@ -64,6 +66,9 @@ open class BaseJvmReferenceInfoTester {
     lateinit var environment: KotlinCoreEnvironment
         private set
 
+    lateinit var psiDocumentManager: PsiDocumentManager
+        private set
+
     private val sourcePrefix = "/*<source"
     private val targetPrefix = "/*<target"
     private val startSuffix = ">*/"
@@ -79,7 +84,10 @@ open class BaseJvmReferenceInfoTester {
     private val targetElementMap = HashMap<String, PsiElement>()
 
     private fun PsiElement.posStr(): String {
-        return "file://${containingFile.virtualFile.path}:${textOffset}"
+        val document = psiDocumentManager.getDocument(containingFile)!!
+        val startLine = document.getLineNumber(this.startOffset)
+        val startCol = this.startOffset - document.getLineStartOffset(startLine)
+        return "file:///${containingFile.virtualFile.path}:${startLine + 1}:${startCol + 1}"
     }
 
     private fun visitLabeledComment(file: PsiFile, comment: PsiComment) {
@@ -149,10 +157,18 @@ open class BaseJvmReferenceInfoTester {
             val source = sourceElementMap[name] ?: fail("no source element $name found")
             val target = targetElementMap[name] ?: fail("no target element $name found")
             checkReference(source, target, name, targetStartMap[name]!!, targetEndMap[name]!!)
-            assertEquals(
-                engine.eval("createReferenceInfo(${result.split(" ").filter(String::isNotEmpty).joinToString()})"),
-                source.reference?.referenceInfo
-            )
+            val expectedInfo =
+                engine.eval("createReferenceInfo(${result.split(" ").filter(String::isNotEmpty).joinToString()})")
+            val actualInfo = source.reference?.referenceInfo
+            if (
+                expectedInfo
+                != actualInfo
+            ) {
+                System.err.println("unexpected info!")
+                System.err.println("source: ${source.posStr()}")
+                System.err.println("target: ${target.posStr()}")
+                throw AssertionFailedError("expected: <$expectedInfo> but was: <$actualInfo>")
+            }
         }
     }
 
@@ -282,6 +298,7 @@ open class BaseJvmReferenceInfoTester {
                 resolutionHelper
             )
         }
+        psiDocumentManager = PsiDocumentManager.getInstance(project)
     }
 
     private fun createKotlinCoreEnvironment(
