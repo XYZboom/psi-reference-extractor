@@ -4,11 +4,11 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
 import kotlin.io.path.Path
 
-object JvmTestGenerator {
+object JvmReferenceInfoTestGenerator {
     private val logger = KotlinLogging.logger {}
 
     private const val TEST_DATA_PATH = "src/testData/jvm/"
-    private const val TEST_OUTPUT_PATH = "src/test/kotlin/com/github/xyzboom/extractor/generated/JvmTest.kt"
+    private const val TEST_OUTPUT_PATH = "src/test/kotlin/com/github/xyzboom/extractor/generated/JvmReferenceInfoTest.kt"
     private const val RESULT_FILE_NAME = "result"
     private fun StringBuilder.appendEachTest(dir: File) {
         var testName = dir.path.replace(File.separator, "_").replace("src_testData", "test")
@@ -22,6 +22,7 @@ object JvmTestGenerator {
             |    initCompilerEnv(Path.of(${"\"\"\""}${dir.path}${"\"\"\""}))
             |    doValidate(${"\"\"\""}${Path(dir.path, RESULT_FILE_NAME)}${"\"\"\""})
             |}
+            |
         """.replaceIndentByMargin(" " * 4)
         )
         append(System.lineSeparator())
@@ -36,11 +37,11 @@ object JvmTestGenerator {
             |// auto generated, do not manually edit!
             |package com.github.xyzboom.extractor.generated
             |
-            |import com.github.xyzboom.extractor.JvmTester
+            |import com.github.xyzboom.extractor.BaseJvmReferenceInfoTester
             |import org.junit.jupiter.api.Test
             |import java.nio.file.Path
             |
-            |class JvmTest: JvmTester() {
+            |class JvmReferenceInfoTest: BaseJvmReferenceInfoTester() {
             |
         """.trimMargin()
         )

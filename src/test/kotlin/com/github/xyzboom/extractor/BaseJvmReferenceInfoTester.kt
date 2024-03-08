@@ -48,7 +48,9 @@ import javax.script.ScriptEngineManager
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.isDirectory
 
-open class JvmTester {
+private typealias CommentInFile = Pair<PsiComment, PsiFile>
+
+open class BaseJvmReferenceInfoTester {
     private val disposer = Disposer.newDisposable()
 
     private val fileSystem: CoreLocalFileSystem = CoreLocalFileSystem()
@@ -62,45 +64,70 @@ open class JvmTester {
     lateinit var environment: KotlinCoreEnvironment
         private set
 
-    val sourceStartText = "/*<source>*/"
-    val sourceEndText = "/*<source/>*/"
-    val targetStartText = "/*<target>*/"
-    val targetEndText = "/*<target/>*/"
+    private val sourcePrefix = "/*<source"
+    private val targetPrefix = "/*<target"
+    private val startSuffix = ">*/"
+    private val endSuffix = "/>*/"
+    private val defaultElementName = "default"
+    private val nameAndResultSplit = ":"
 
-    var sourceStart: PsiComment? = null
-    var sourceEnd: PsiComment? = null
-    var targetStart: PsiComment? = null
-    var targetEnd: PsiComment? = null
-    var sourceFile: PsiFile? = null
-    var targetFile: PsiFile? = null
+    private val sourceStartMap = HashMap<String, CommentInFile>()
+    private val sourceEndMap = HashMap<String, CommentInFile>()
+    private val targetStartMap = HashMap<String, CommentInFile>()
+    private val targetEndMap = HashMap<String, CommentInFile>()
+    private val sourceElementMap = HashMap<String, PsiElement>()
+    private val targetElementMap = HashMap<String, PsiElement>()
+
+    private fun PsiElement.posStr(): String {
+        return "file://${containingFile.virtualFile.path}:${textOffset}"
+    }
 
     private fun visitLabeledComment(file: PsiFile, comment: PsiComment) {
-        when (comment.text) {
-            sourceStartText -> {
-                sourceStart = comment
-                sourceFile = file
-            }
+        val commentText = comment.text
+        when {
+            commentText.startsWith(sourcePrefix) -> {
+                when {
+                    commentText.endsWith(endSuffix) -> {
+                        val sourceName = commentText.removeSurrounding(sourcePrefix, endSuffix).defaultIfEmpty()
+                        val psiComment = sourceEndMap.putIfAbsent(sourceName, comment to file)
+                        if (psiComment != null) {
+                            fail("source name: $sourceName already exists at: ${psiComment.first.posStr()}")
+                        }
+                    }
 
-            sourceEndText -> {
-                sourceEnd = comment
-                require(file == sourceFile) {
-                    "source element comment should be in the same file!"
+                    commentText.endsWith(startSuffix) -> {
+                        val sourceName = commentText.removeSurrounding(sourcePrefix, startSuffix).defaultIfEmpty()
+                        val psiComment = sourceStartMap.putIfAbsent(sourceName, comment to file)
+                        if (psiComment != null) {
+                            fail("source name: $sourceName already exists at: ${psiComment.first.posStr()}")
+                        }
+                    }
                 }
             }
 
-            targetStartText -> {
-                targetStart = comment
-                targetFile = file
-            }
+            commentText.startsWith(targetPrefix) -> {
+                when {
+                    commentText.endsWith(endSuffix) -> {
+                        val sourceName = commentText.removeSurrounding(targetPrefix, endSuffix).defaultIfEmpty()
+                        val psiComment = targetEndMap.putIfAbsent(sourceName, comment to file)
+                        if (psiComment != null) {
+                            fail("target name: $sourceName already exists at: ${psiComment.first.posStr()}")
+                        }
+                    }
 
-            targetEndText -> {
-                targetEnd = comment
-                require(file == targetFile) {
-                    "target element comment should be in the same file!"
+                    commentText.endsWith(startSuffix) -> {
+                        val sourceName = commentText.removeSurrounding(targetPrefix, startSuffix).defaultIfEmpty()
+                        val psiComment = targetStartMap.putIfAbsent(sourceName, comment to file)
+                        if (psiComment != null) {
+                            fail("target name: $sourceName already exists at: ${psiComment.first.posStr()}")
+                        }
+                    }
                 }
             }
         }
     }
+
+    private fun String.defaultIfEmpty(): String = removePrefix(":").ifEmpty { defaultElementName }
 
     fun PsiElement.parentRangeIn(start: PsiElement, end: PsiElement, needReference: Boolean = false): PsiElement? {
         if ((firstChild === start || prevLeaf() === start)
@@ -112,6 +139,24 @@ open class JvmTester {
     }
 
     protected fun doValidate(scriptPath: String) {
+        preparePsiElements()
+        val resultText = File(scriptPath).readText()
+        for (line in resultText.lines()) {
+            val (name, result) = if (line.contains(nameAndResultSplit)) {
+                val split = line.split(nameAndResultSplit)
+                split[0] to split[1]
+            } else defaultElementName to line
+            val source = sourceElementMap[name] ?: fail("no source element $name found")
+            val target = targetElementMap[name] ?: fail("no target element $name found")
+            checkReference(source, target, name, targetStartMap[name]!!, targetEndMap[name]!!)
+            assertEquals(
+                engine.eval("createReferenceInfo(${result.split(" ").filter(String::isNotEmpty).joinToString()})"),
+                source.reference?.referenceInfo
+            )
+        }
+    }
+
+    private fun preparePsiElements() {
         environment.configuration.javaSourceRoots.mapNotNull(environment::findLocalFile).forEach {
             val file = PsiManager.getInstance(project).findFile(it)!!
             if (file is PsiJavaFile) {
@@ -130,28 +175,87 @@ open class JvmTester {
                 })
             }
         }
-        require(
-            sourceStart != null && sourceEnd != null && targetStart != null && targetEnd != null
-                    && sourceFile != null && targetFile != null
-        ) { "no source or target in test files!" }
-        val sourceElement =
-            sourceFile!!.findElementAt(sourceStart!!.endOffset)?.parentRangeIn(sourceStart!!, sourceEnd!!, true)
-                ?: fail("could not find source element")
-        val targetElement =
-            targetFile!!.findElementAt(targetStart!!.endOffset)?.parentRangeIn(targetStart!!, targetEnd!!)
-                ?: fail("could not find target element")
+        require(sourceStartMap.isNotEmpty() && sourceEndMap.isNotEmpty()) {
+            "no specified source element!"
+        }
+        require(targetStartMap.isNotEmpty() && targetEndMap.isNotEmpty()) {
+            "no specified target element!"
+        }
+        require(sourceStartMap.keys == sourceEndMap.keys) {
+            "source elements does not match! " +
+                    if ((sourceEndMap.keys - sourceStartMap.keys).isNotEmpty()) {
+                        "These names has end label($sourcePrefix$endSuffix) but not has start label($sourcePrefix$startSuffix):" +
+                                "${sourceEndMap.keys - sourceStartMap.keys}"
+                    } else {
+                        ""
+                    } +
+                    if ((sourceStartMap.keys - sourceEndMap.keys).isNotEmpty()) {
+                        "These names has start label($sourcePrefix$startSuffix) but not has end label($sourcePrefix$endSuffix):" +
+                                "${sourceStartMap.keys - sourceEndMap.keys}"
+                    } else {
+                        ""
+                    }
+        }
+        require(targetStartMap.keys == targetEndMap.keys) {
+            "target elements does not match! " +
+                    if ((targetEndMap.keys - targetStartMap.keys).isNotEmpty()) {
+                        "These names has end label($targetPrefix$endSuffix) but not has start label($targetPrefix$startSuffix):" +
+                                "${targetEndMap.keys - targetStartMap.keys}\n"
+                    } else {
+                        ""
+                    } +
+                    if ((targetStartMap.keys - targetEndMap.keys).isNotEmpty()) {
+                        "These names has start label($sourcePrefix$startSuffix) but not has end label($sourcePrefix$endSuffix):" +
+                                "${targetStartMap.keys - targetEndMap.keys}\n"
+                    } else {
+                        ""
+                    }
+        }
+        for ((key, start) in sourceStartMap) {
+            val end = sourceEndMap[key]
+                ?: fail("no source end element named $key, start element is at: ${start.first.posStr()}")
+            require(start.second === end.second) {
+                "The start element at: ${start.first.posStr()} must be in the same file as the end element at: ${end.first.posStr()}"
+            }
+            val sourceElement = start.second.findElementAt(start.first.endOffset)
+                ?.parentRangeIn(start.first, end.first, true)
+                ?: fail("Could not found element that has reference between ${start.first.posStr()} and ${end.first.posStr()}.")
+            sourceElementMap[key] = sourceElement
+        }
+        for ((key, start) in targetStartMap) {
+            val end = targetEndMap[key]
+                ?: fail("no target end element named $key, start element is at: ${start.first.posStr()}")
+            require(start.second === end.second) {
+                "The start element at: ${start.first.posStr()} must be in the same file as the end element at: ${end.first.posStr()}"
+            }
+            val targetElement = start.second.findElementAt(start.first.endOffset)
+                ?.parentRangeIn(start.first, end.first)
+                ?: fail("Could not found element between ${start.first.posStr()} and ${end.first.posStr()}.")
+            val sourceElement = sourceElementMap[key]
+                ?: fail("no source named: $key found but target found between ${start.first.posStr()} and ${end.first.posStr()}.")
+            checkReference(sourceElement, targetElement, key, start, end)
+            targetElementMap[key] = targetElement
+        }
+    }
+
+    private fun checkReference(
+        sourceElement: PsiElement,
+        targetElement: PsiElement,
+        key: String,
+        start: CommentInFile,
+        end: CommentInFile
+    ) {
         val resolved = sourceElement.reference?.resolve()
         if (targetElement !== resolved) {
             if (resolved !is KtLightElement<*, *>) {
-                fail("resolved reference must be target element")
+                fail(
+                    "resolved reference must be target element!" +
+                            " fail on source between ${sourceStartMap[key]!!.first.posStr()} and ${sourceEndMap[key]!!.first.posStr()}, " +
+                            "end between ${start.first.posStr()} and ${end.first.posStr()}"
+                )
             }
             assertEquals(targetElement, resolved.kotlinOrigin, "resolved reference must be target element")
         }
-        val resultText = File(scriptPath).readText()
-        assertEquals(
-            engine.eval("createReferenceInfo(${resultText.split(" ").joinToString()})"),
-            sourceElement.reference?.referenceInfo
-        )
     }
 
     //<editor-fold desc="setup Env">
