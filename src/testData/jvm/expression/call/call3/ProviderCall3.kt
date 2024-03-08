@@ -1,11 +1,11 @@
 package expression.call.call3
 
 class ProviderCall3 {
-    /*<target>*/fun func0(): String {
+    /*<target:func0>*/fun func0(): String {
         return "func0"
-    }/*<target/>*/
+    }/*<target:func0/>*/
 
-    fun func1(arg0: Int): Int {
+    /*<target:func1>*/fun func1(arg0: Int): Int {
         return arg0
-    }
+    }/*<target:func1/>*/
 }

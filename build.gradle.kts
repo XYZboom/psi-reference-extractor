@@ -45,11 +45,11 @@ publishing {
         // 配置发布的库
         create<MavenPublication>("jar") {
             from(components["java"])
-            configurePublication()
-        }
-        create<MavenPublication>("sourcesJar") {
-            artifact(tasks["sourcesJar"]) {
-                classifier = "sources"
+            artifacts {
+                archives(tasks["jar"])
+                archives(tasks["sourcesJar"]) {
+                    classifier = "sources"
+                }
             }
             configurePublication()
         }
