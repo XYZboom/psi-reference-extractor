@@ -2,9 +2,9 @@
 
 List of reference types from the perspective of the source element.
 
-- [Import](##Import)
-- [Call](##Call)
-- [Property](##Property)
+- [Import](#Import)
+- [Call](#Call)
+- [Property](#Property)
 
 ## Import
 

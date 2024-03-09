@@ -114,5 +114,7 @@ private fun KtSimpleNameReference.getReferenceInfo(resolvedTarget: PsiElement?):
 private val PsiElement.importedType: IReferenceTargetType?
     get() = when (this) {
         is PsiClass, is KtClassOrObject -> Class
+        is KtProperty -> Property
+        is KtFunction -> Method
         else -> null
     }

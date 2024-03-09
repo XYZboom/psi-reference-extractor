@@ -1,4 +1,4 @@
 package import.import0.package1
 
-interface Interface0Import0 {
-}
+/*<target:Interface0Import0>*/interface Interface0Import0 {
+}/*<target:Interface0Import0/>*/

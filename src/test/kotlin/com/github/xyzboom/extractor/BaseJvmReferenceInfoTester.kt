@@ -149,7 +149,12 @@ open class BaseJvmReferenceInfoTester {
     protected fun doValidate(scriptPath: String) {
         preparePsiElements()
         val resultText = File(scriptPath).readText()
-        for (line in resultText.lines()) {
+        val lines = resultText.lines()
+        if (resultText.isEmpty() || lines.all(String::isEmpty)) fail("test result file is empty!")
+        for (line in lines) {
+            if (line.isEmpty()) {
+                continue
+            }
             val (name, result) = if (line.contains(nameAndResultSplit)) {
                 val split = line.split(nameAndResultSplit)
                 split[0] to split[1]
