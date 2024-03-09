@@ -74,9 +74,32 @@ class JvmReferenceInfoTest: BaseJvmReferenceInfoTester() {
             }
     
             @Test
+            fun test_callableProperty0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\call\callableProperty0"""))
+                doValidate("""src\testData\jvm\expression\call\callableProperty0\result""")
+            }
+    
+            @Test
             fun test_JavaCallKotlinToplevel0() {
                 initCompilerEnv(Path.of("""src\testData\jvm\expression\call\JavaCallKotlinToplevel0"""))
                 doValidate("""src\testData\jvm\expression\call\JavaCallKotlinToplevel0\result""")
+            }
+    
+    
+        }
+        
+        @Nested
+        inner class CreateTest {
+            @Test
+            fun test_create0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\create\create0"""))
+                doValidate("""src\testData\jvm\expression\create\create0\result""")
+            }
+    
+            @Test
+            fun test_createWithNoArgConstructor() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\create\createWithNoArgConstructor"""))
+                doValidate("""src\testData\jvm\expression\create\createWithNoArgConstructor\result""")
             }
     
     
@@ -92,12 +115,23 @@ class JvmReferenceInfoTest: BaseJvmReferenceInfoTester() {
             doValidate("""src\testData\jvm\import\import0\result""")
         }
     
-        @Test
-        fun test_kotlinImportKotlinTopLevels() {
-            initCompilerEnv(Path.of("""src\testData\jvm\import\kotlinImportKotlinTopLevels"""))
-            doValidate("""src\testData\jvm\import\kotlinImportKotlinTopLevels\result""")
-        }
     
+        @Nested
+        inner class KotlinImportKotlinTopLevelsTest {
+            @Test
+            fun test_importFunction() {
+                initCompilerEnv(Path.of("""src\testData\jvm\import\kotlinImportKotlinTopLevels\importFunction"""))
+                doValidate("""src\testData\jvm\import\kotlinImportKotlinTopLevels\importFunction\result""")
+            }
+    
+            @Test
+            fun test_importProperty() {
+                initCompilerEnv(Path.of("""src\testData\jvm\import\kotlinImportKotlinTopLevels\importProperty"""))
+                doValidate("""src\testData\jvm\import\kotlinImportKotlinTopLevels\importProperty\result""")
+            }
+    
+    
+        }
     
     }
     

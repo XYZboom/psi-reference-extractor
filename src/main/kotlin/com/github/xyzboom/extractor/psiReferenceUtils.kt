@@ -100,10 +100,14 @@ private fun SyntheticPropertyAccessorReference.getReferenceInfo(resolvedTarget: 
 private fun KtSimpleNameReference.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo {
     if (resolvedTarget != null) {
         val targetLanguage = resolvedTarget.language
+        val targetType = resolvedTarget.targetType
         if (element.parent is KtCallExpression) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Call, Method)
+            if (resolvedTarget is KtConstructor<*> || targetType === Class) {
+                return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Create, Class)
+            }
+            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Call, targetType)
         } else if (element.getParentOfType<KtImportList>(false) != null) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Import, resolvedTarget.importedType)
+            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Import, targetType)
         }
         return UNKNOWN
     } else {
@@ -111,7 +115,7 @@ private fun KtSimpleNameReference.getReferenceInfo(resolvedTarget: PsiElement?):
     }
 }
 
-private val PsiElement.importedType: IReferenceTargetType?
+private val PsiElement.targetType: IReferenceTargetType?
     get() = when (this) {
         is PsiClass, is KtClassOrObject -> Class
         is KtProperty -> Property

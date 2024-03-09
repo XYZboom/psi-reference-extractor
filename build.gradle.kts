@@ -95,6 +95,7 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    inputs.dir("src/testData")
 }
 kotlin {
     jvmToolchain(17)

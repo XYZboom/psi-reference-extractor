@@ -5,6 +5,7 @@ List of reference types from the perspective of the source element.
 - [Import](#Import)
 - [Call](#Call)
 - [Property](#Property)
+- [Create](#Create)
 
 ## Import
 
@@ -96,7 +97,7 @@ class Target {
 
 ## Property
 
-Reference whose source at property access expression.
+Reference whose source located at property access expression.
 
 ### Code Samples
 
@@ -124,3 +125,31 @@ class Target {
 }
 ```
 
+# Create
+
+Reference whose source at an expression that create an object.
+
+## Code Samples
+
+#### Kotlin create Kotlin class
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+fun func() {
+    val target = Target()
+//               ^^^^^^^^
+//  reference here has the source type "create"
+//               ^^^^^^
+//  In PSI, PsiRefence is always bind to element here.
+}
+```
+
+```kotlin
+// Target.kt
+package target
+  class Target {}
+//^^^^^^^^^^^^^^^
+//  reference above targets here and has the target type "class"
+```

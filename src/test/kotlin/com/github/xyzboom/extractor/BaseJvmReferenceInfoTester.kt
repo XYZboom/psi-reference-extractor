@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.idea.references.KotlinReferenceProviderContributor
 import org.jetbrains.kotlin.idea.references.ReadWriteAccessChecker
 import org.jetbrains.kotlin.psi.KotlinReferenceProvidersService
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
 import org.jetbrains.kotlin.psi.psiUtil.nextLeaf
@@ -40,6 +41,7 @@ import org.jetbrains.kotlin.resolve.lazy.declarations.FileBasedDeclarationProvid
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.fail
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.opentest4j.AssertionFailedError
 import java.io.File
 import java.io.PrintStream
@@ -82,6 +84,16 @@ open class BaseJvmReferenceInfoTester {
     private val targetEndMap = HashMap<String, CommentInFile>()
     private val sourceElementMap = HashMap<String, PsiElement>()
     private val targetElementMap = HashMap<String, PsiElement>()
+
+    @BeforeEach
+    fun clearElements() {
+        sourceStartMap.clear()
+        sourceEndMap.clear()
+        targetStartMap.clear()
+        targetEndMap.clear()
+        sourceElementMap.clear()
+        targetElementMap.clear()
+    }
 
     private fun PsiElement.posStr(): String {
         val document = psiDocumentManager.getDocument(containingFile)!!
@@ -138,13 +150,23 @@ open class BaseJvmReferenceInfoTester {
     private fun String.defaultIfEmpty(): String = removePrefix(":").ifEmpty { defaultElementName }
 
     fun PsiElement.parentRangeIn(start: PsiElement, end: PsiElement, needReference: Boolean = false): PsiElement? {
-        if ((firstChild === start || prevLeaf() === start)
-            && (lastChild === end || nextLeaf() === end)
+        if (checkRange(start, end)
             && (!needReference || references.isNotEmpty())
-        ) return this
+        ) {
+            if (parent is KtPrimaryConstructor && parent.checkRange(start, end)) {
+                return parent
+            }
+            return this
+        }
         if (parent == null || parent is PsiFile) return null
         return parent.parentRangeIn(start, end)
     }
+
+    private fun PsiElement.checkRange(
+        start: PsiElement,
+        end: PsiElement
+    ) = ((firstChild === start || prevLeaf() === start)
+                && (lastChild === end || nextLeaf() === end))
 
     protected fun doValidate(scriptPath: String) {
         preparePsiElements()
