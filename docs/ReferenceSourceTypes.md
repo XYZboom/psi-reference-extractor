@@ -6,6 +6,8 @@ List of reference types from the perspective of the source element.
 - [Call](#Call)
 - [Property](#Property)
 - [Create](#Create)
+- [Extend](#Extend)
+- [Implement](#Implement)
 
 ## Import
 
@@ -13,7 +15,7 @@ Reference whose source located at import list.
 
 ### Code Samples
 
-### Java import Java class
+#### Java import Java class
 
 ```java
 // Source.java
@@ -125,11 +127,11 @@ class Target {
 }
 ```
 
-# Create
+## Create
 
-Reference whose source at an expression that create an object.
+Reference whose source located at an expression that create an object.
 
-## Code Samples
+### Code Samples
 
 #### Kotlin create Kotlin class
 
@@ -142,7 +144,7 @@ fun func() {
 //               ^^^^^^^^
 //  reference here has the source type "create"
 //               ^^^^^^
-//  In PSI, PsiRefence is always bind to element here.
+//  In PSI, PsiReference is always bind to element here.
 }
 ```
 
@@ -152,4 +154,56 @@ package target
   class Target {}
 //^^^^^^^^^^^^^^^
 //  reference above targets here and has the target type "class"
+```
+
+## Extend
+
+Reference whose source is class extend.
+
+### Code Samples
+
+#### Kotlin extend Kotlin class
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+class Source: Target() {
+//            ^^^^^^
+//  reference here has the source type "extend"
+}
+```
+
+```kotlin
+// Target.kt
+package target
+  open class Target
+//^^^^^^^^^^^^^^^^^
+//  reference above targets here and has the target type "class"
+```
+
+## Implement
+
+Reference whose source is implement of an interface.
+
+### Code Samples
+
+##### Kotlin implement Kotlin interface
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+class Source: ITarget {
+//            ^^^^^^^
+//  reference here has the source type "implement"
+}
+```
+
+```kotlin
+// Target.kt
+package target
+  interface ITarget
+//^^^^^^^^^^^^^^^^^
+//  reference above targets here and has the target type "interface"
 ```

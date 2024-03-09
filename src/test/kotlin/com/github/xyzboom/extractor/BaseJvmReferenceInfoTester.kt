@@ -40,7 +40,6 @@ import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.lazy.declarations.FileBasedDeclarationProviderFactory
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.fail
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.opentest4j.AssertionFailedError
 import java.io.File
@@ -166,7 +165,7 @@ open class BaseJvmReferenceInfoTester {
         start: PsiElement,
         end: PsiElement
     ) = ((firstChild === start || prevLeaf() === start)
-                && (lastChild === end || nextLeaf() === end))
+            && (lastChild === end || nextLeaf() === end))
 
     protected fun doValidate(scriptPath: String) {
         preparePsiElements()
@@ -290,15 +289,16 @@ open class BaseJvmReferenceInfoTester {
         end: CommentInFile
     ) {
         val resolved = sourceElement.reference?.resolve()
-        if (targetElement !== resolved) {
+        if (!targetElement.isEquivalentTo(resolved)) {
+            val failMessage = "resolved reference must be target element!" +
+                    " fail on source between ${sourceStartMap[key]!!.first.posStr()} and ${sourceEndMap[key]!!.first.posStr()}, " +
+                    "end between ${start.first.posStr()} and ${end.first.posStr()}"
             if (resolved !is KtLightElement<*, *>) {
-                fail(
-                    "resolved reference must be target element!" +
-                            " fail on source between ${sourceStartMap[key]!!.first.posStr()} and ${sourceEndMap[key]!!.first.posStr()}, " +
-                            "end between ${start.first.posStr()} and ${end.first.posStr()}"
-                )
+                fail(failMessage)
             }
-            assertEquals(targetElement, resolved.kotlinOrigin, "resolved reference must be target element")
+            if (!targetElement.isEquivalentTo(resolved.kotlinOrigin)) {
+                fail(failMessage)
+            }
         }
     }
 

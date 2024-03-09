@@ -10,6 +10,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiJavaReference
 import com.intellij.psi.PsiMethodCallExpression
+import com.intellij.psi.PsiNewExpression
 import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceExpression
 import org.jetbrains.kotlin.idea.KotlinLanguage
@@ -48,11 +49,16 @@ val PsiReference.referenceInfo: ReferenceInfo
         return UNKNOWN
     }
 
-fun PsiJavaReference.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo = when (this) {
-    is PsiReferenceExpression -> getReferenceInfo(resolvedTarget)
+fun PsiJavaReference.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo =
+    when {
+        this is PsiReferenceExpression -> getReferenceInfo(resolvedTarget)
+        element.parent is PsiNewExpression -> ReferenceInfo(
+            JavaLanguage.INSTANCE, resolvedTarget?.language,
+            Create, resolvedTarget?.targetType
+        )
 
-    else -> UNKNOWN
-}
+        else -> UNKNOWN
+    }
 
 private fun PsiReferenceExpression.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo =
     if (parent is PsiMethodCallExpression) {
@@ -108,6 +114,10 @@ private fun KtSimpleNameReference.getReferenceInfo(resolvedTarget: PsiElement?):
             return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Call, targetType)
         } else if (element.getParentOfType<KtImportList>(false) != null) {
             return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Import, targetType)
+        } else if (element.getParentOfType<KtSuperTypeEntry>(false) != null) {
+            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Implement, targetType)
+        } else if (element.getParentOfType<KtSuperTypeCallEntry>(false) != null) {
+            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Extend, targetType)
         }
         return UNKNOWN
     } else {
@@ -117,7 +127,18 @@ private fun KtSimpleNameReference.getReferenceInfo(resolvedTarget: PsiElement?):
 
 private val PsiElement.targetType: IReferenceTargetType?
     get() = when (this) {
-        is PsiClass, is KtClassOrObject -> Class
+        is KtClassOrObject -> when(this) {
+            is KtClass -> when {
+                isInterface() -> Interface
+                else -> Class
+            }
+            else -> Class
+        }
+        is PsiClass -> when {
+            isInterface -> Interface
+            else -> Class
+        }
+
         is KtProperty -> Property
         is KtFunction -> Method
         else -> null

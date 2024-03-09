@@ -102,6 +102,18 @@ class JvmReferenceInfoTest: BaseJvmReferenceInfoTester() {
                 doValidate("""src\testData\jvm\expression\create\createWithNoArgConstructor\result""")
             }
     
+            @Test
+            fun test_javaCreate0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\create\javaCreate0"""))
+                doValidate("""src\testData\jvm\expression\create\javaCreate0\result""")
+            }
+    
+            @Test
+            fun test_javaCreate1() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\create\javaCreate1"""))
+                doValidate("""src\testData\jvm\expression\create\javaCreate1\result""")
+            }
+    
     
         }
     
@@ -133,7 +145,17 @@ class JvmReferenceInfoTest: BaseJvmReferenceInfoTester() {
     
         }
     
-
+    }
+        
+    @Nested
+    inner class InheritTest {
+        @Test
+        fun test_inherit0() {
+            initCompilerEnv(Path.of("""src\testData\jvm\inherit\inherit0"""))
+            doValidate("""src\testData\jvm\inherit\inherit0\result""")
+        }
+    
+    
     }
     
 }
