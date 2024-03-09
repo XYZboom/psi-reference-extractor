@@ -184,6 +184,7 @@ open class BaseJvmReferenceInfoTester {
             val source = sourceElementMap[name] ?: fail("no source element $name found")
             val target = targetElementMap[name] ?: fail("no target element $name found")
             checkReference(source, target, name, targetStartMap[name]!!, targetEndMap[name]!!)
+
             val expectedInfo =
                 engine.eval("createReferenceInfo(${result.split(" ").filter(String::isNotEmpty).joinToString()})")
             val actualInfo = source.reference?.referenceInfo
