@@ -1,0 +1,1 @@
+/*<target:callableProperty>*/val callableProperty: () -> Unit = {}/*<target:callableProperty/>*/

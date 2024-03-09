@@ -20,7 +20,6 @@ data class ReferenceInfo(
      * If the source language is the same as the target, [targetType] and [sourceType] must be same.
      * Otherwise, maybe not.
      */
-
     val targetType: IReferenceTargetType?
 ) {
     companion object {

@@ -1,11 +1,12 @@
 package com.github.xyzboom.extractor
 
 import com.github.xyzboom.extractor.ReferenceInfo.Companion.UNKNOWN
+import com.github.xyzboom.extractor.types.*
 import com.github.xyzboom.extractor.types.Call
-import com.github.xyzboom.extractor.types.Method
-import com.github.xyzboom.extractor.types.Property
+import com.github.xyzboom.extractor.types.Class
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.util.Key
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiJavaReference
 import com.intellij.psi.PsiMethodCallExpression
@@ -13,9 +14,8 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceExpression
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.references.*
-import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.KtDestructuringDeclarationEntry
-import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 
 private const val SourceKeyName = "KeySourceReferenceInfo\$Extractor"
 private const val TargetKeyName = "KeyTargetReferenceInfo\$Extractor"
@@ -100,11 +100,25 @@ private fun SyntheticPropertyAccessorReference.getReferenceInfo(resolvedTarget: 
 private fun KtSimpleNameReference.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo {
     if (resolvedTarget != null) {
         val targetLanguage = resolvedTarget.language
+        val targetType = resolvedTarget.targetType
         if (element.parent is KtCallExpression) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Call, Method)
+            if (resolvedTarget is KtConstructor<*> || targetType === Class) {
+                return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Create, Class)
+            }
+            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Call, targetType)
+        } else if (element.getParentOfType<KtImportList>(false) != null) {
+            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Import, targetType)
         }
         return UNKNOWN
     } else {
         return UNKNOWN
     }
 }
+
+private val PsiElement.targetType: IReferenceTargetType?
+    get() = when (this) {
+        is PsiClass, is KtClassOrObject -> Class
+        is KtProperty -> Property
+        is KtFunction -> Method
+        else -> null
+    }

@@ -28,9 +28,11 @@ import org.jetbrains.kotlin.idea.references.KotlinReferenceProviderContributor
 import org.jetbrains.kotlin.idea.references.ReadWriteAccessChecker
 import org.jetbrains.kotlin.psi.KotlinReferenceProvidersService
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
 import org.jetbrains.kotlin.psi.psiUtil.nextLeaf
+import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.references.fe10.base.DummyKtFe10ReferenceResolutionHelper
 import org.jetbrains.kotlin.references.fe10.base.KtFe10KotlinReferenceProviderContributor
 import org.jetbrains.kotlin.references.fe10.base.KtFe10ReferenceResolutionHelper
@@ -39,6 +41,8 @@ import org.jetbrains.kotlin.resolve.lazy.declarations.FileBasedDeclarationProvid
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.fail
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
+import org.opentest4j.AssertionFailedError
 import java.io.File
 import java.io.PrintStream
 import java.nio.file.Path
@@ -64,6 +68,9 @@ open class BaseJvmReferenceInfoTester {
     lateinit var environment: KotlinCoreEnvironment
         private set
 
+    lateinit var psiDocumentManager: PsiDocumentManager
+        private set
+
     private val sourcePrefix = "/*<source"
     private val targetPrefix = "/*<target"
     private val startSuffix = ">*/"
@@ -78,8 +85,21 @@ open class BaseJvmReferenceInfoTester {
     private val sourceElementMap = HashMap<String, PsiElement>()
     private val targetElementMap = HashMap<String, PsiElement>()
 
+    @BeforeEach
+    fun clearElements() {
+        sourceStartMap.clear()
+        sourceEndMap.clear()
+        targetStartMap.clear()
+        targetEndMap.clear()
+        sourceElementMap.clear()
+        targetElementMap.clear()
+    }
+
     private fun PsiElement.posStr(): String {
-        return "file://${containingFile.virtualFile.path}:${textOffset}"
+        val document = psiDocumentManager.getDocument(containingFile)!!
+        val startLine = document.getLineNumber(this.startOffset)
+        val startCol = this.startOffset - document.getLineStartOffset(startLine)
+        return "file:///${containingFile.virtualFile.path}:${startLine + 1}:${startCol + 1}"
     }
 
     private fun visitLabeledComment(file: PsiFile, comment: PsiComment) {
@@ -130,18 +150,33 @@ open class BaseJvmReferenceInfoTester {
     private fun String.defaultIfEmpty(): String = removePrefix(":").ifEmpty { defaultElementName }
 
     fun PsiElement.parentRangeIn(start: PsiElement, end: PsiElement, needReference: Boolean = false): PsiElement? {
-        if ((firstChild === start || prevLeaf() === start)
-            && (lastChild === end || nextLeaf() === end)
+        if (checkRange(start, end)
             && (!needReference || references.isNotEmpty())
-        ) return this
+        ) {
+            if (parent is KtPrimaryConstructor && parent.checkRange(start, end)) {
+                return parent
+            }
+            return this
+        }
         if (parent == null || parent is PsiFile) return null
         return parent.parentRangeIn(start, end)
     }
 
+    private fun PsiElement.checkRange(
+        start: PsiElement,
+        end: PsiElement
+    ) = ((firstChild === start || prevLeaf() === start)
+                && (lastChild === end || nextLeaf() === end))
+
     protected fun doValidate(scriptPath: String) {
         preparePsiElements()
         val resultText = File(scriptPath).readText()
-        for (line in resultText.lines()) {
+        val lines = resultText.lines()
+        if (resultText.isEmpty() || lines.all(String::isEmpty)) fail("test result file is empty!")
+        for (line in lines) {
+            if (line.isEmpty()) {
+                continue
+            }
             val (name, result) = if (line.contains(nameAndResultSplit)) {
                 val split = line.split(nameAndResultSplit)
                 split[0] to split[1]
@@ -149,10 +184,19 @@ open class BaseJvmReferenceInfoTester {
             val source = sourceElementMap[name] ?: fail("no source element $name found")
             val target = targetElementMap[name] ?: fail("no target element $name found")
             checkReference(source, target, name, targetStartMap[name]!!, targetEndMap[name]!!)
-            assertEquals(
-                engine.eval("createReferenceInfo(${result.split(" ").filter(String::isNotEmpty).joinToString()})"),
-                source.reference?.referenceInfo
-            )
+
+            val expectedInfo =
+                engine.eval("createReferenceInfo(${result.split(" ").filter(String::isNotEmpty).joinToString()})")
+            val actualInfo = source.reference?.referenceInfo
+            if (
+                expectedInfo
+                != actualInfo
+            ) {
+                System.err.println("unexpected info!")
+                System.err.println("source: ${source.posStr()}")
+                System.err.println("target: ${target.posStr()}")
+                throw AssertionFailedError("expected: <$expectedInfo> but was: <$actualInfo>")
+            }
         }
     }
 
@@ -282,6 +326,7 @@ open class BaseJvmReferenceInfoTester {
                 resolutionHelper
             )
         }
+        psiDocumentManager = PsiDocumentManager.getInstance(project)
     }
 
     private fun createKotlinCoreEnvironment(
