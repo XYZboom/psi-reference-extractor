@@ -9,7 +9,9 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/cli-runner" />
             <option value="$PROJECT_DIR$/intellij-core" />
+            <option value="$PROJECT_DIR$/kotlin-compiler-context-utils" />
             <option value="$PROJECT_DIR$/kt-references-analysis" />
             <option value="$PROJECT_DIR$/kt-references-analysis/analysis-api" />
             <option value="$PROJECT_DIR$/kt-references-analysis/analysis-api-fe10" />

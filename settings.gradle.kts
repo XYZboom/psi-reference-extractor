@@ -13,3 +13,5 @@ include(
     ":intellij-core",
 )
 include("test-framework")
+include("cli-runner")
+include("kotlin-compiler-context-utils")
