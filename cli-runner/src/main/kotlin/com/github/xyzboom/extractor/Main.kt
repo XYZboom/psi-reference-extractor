@@ -3,10 +3,8 @@ package com.github.xyzboom.extractor
 import com.github.xyzboom.ktcutils.KotlinJvmCompilerContext
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiPackage
 import com.intellij.psi.PsiRecursiveElementVisitor
 import org.jgrapht.graph.DefaultDirectedGraph
-import org.jgrapht.graph.DefaultDirectedWeightedGraph
 import org.jgrapht.nio.DefaultAttribute
 import org.jgrapht.nio.dot.DOTExporter
 import picocli.CommandLine
@@ -45,7 +43,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                 override fun visitElement(element: PsiElement) {
                     elementGraph.addVertex(element)
                     val target = element.reference?.resolve()
-                    if (target != null && target !is PsiPackage) {
+                    if (target != null && target in elementGraph.vertexSet()) {
                         elementGraph.addEdge(element, target, GrammarOrRefEdge(element.reference?.referenceInfo))
                     }
                     super.visitElement(element)
