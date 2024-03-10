@@ -1,7 +1,7 @@
 package com.github.xyzboom.extractor
 
 import org.jgrapht.graph.DefaultDirectedGraph
-import org.jgrapht.graph.DefaultDirectedWeightedGraph
+import org.jgrapht.graph.DirectedWeightedMultigraph
 import org.jgrapht.traverse.BreadthFirstIterator
 
 class TypedRefExtractor<V, E>(
@@ -22,8 +22,8 @@ class TypedRefExtractor<V, E>(
         }
     }
 
-    fun doExtractor(graph: DefaultDirectedGraph<V, E>, startVertices: Iterable<V>): DefaultDirectedWeightedGraph<V, E> {
-        val result = DefaultDirectedWeightedGraph<V, E>(edgeClass)
+    fun doExtractor(graph: DefaultDirectedGraph<V, E>, startVertices: Iterable<V>): DirectedWeightedMultigraph<V, E> {
+        val result = DirectedWeightedMultigraph<V, E>(edgeClass)
         graph.vertexSet().filter(vertexFilter).forEach(result::addVertex)
         val iterator = BreadthFirstIteratorWithEdgeFilter(graph, startVertices)
         val collectMap = HashMap<V, V>()
@@ -48,7 +48,7 @@ class TypedRefExtractor<V, E>(
             for (edge in edges.filter(collectEdgeFilter)) {
                 val target = graph.getEdgeTarget(edge)
                 val collectTarget = collectMap[target] ?: continue
-                if (collectTarget === target) continue
+                if (collectTarget === collectV) continue
                 result.addEdge(collectV, collectTarget, edge)
             }
         }

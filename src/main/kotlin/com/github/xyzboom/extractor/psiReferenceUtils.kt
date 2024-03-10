@@ -84,7 +84,7 @@ private fun KtReference.getReferenceInfo(resolvedTarget: PsiElement?): Reference
         is KtArrayAccessReference -> UNKNOWN
         is KtCollectionLiteralReference -> UNKNOWN
         is KtConstructorDelegationReference -> UNKNOWN
-        is KtDestructuringDeclarationEntry -> UNKNOWN
+        is KtDestructuringDeclarationReference -> UNKNOWN
         is KtForLoopInReference -> UNKNOWN
         is KtInvokeFunctionReference -> UNKNOWN
         is KtPropertyDelegationMethodsReference -> UNKNOWN
