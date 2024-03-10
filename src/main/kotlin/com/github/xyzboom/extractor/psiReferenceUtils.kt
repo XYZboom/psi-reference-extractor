@@ -8,7 +8,9 @@ import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiJavaReference
+import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.PsiNewExpression
 import com.intellij.psi.PsiReference
@@ -20,12 +22,13 @@ import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 
 private const val SourceKeyName = "KeySourceReferenceInfo\$Extractor"
 private const val TargetKeyName = "KeyTargetReferenceInfo\$Extractor"
-private val sourceReferenceInfoUserDataKey = Key.create<ReferenceInfo>(SourceKeyName)
-private val targetReferenceInfoUserDataKey = Key.create<ReferenceInfo>(TargetKeyName)
+val sourceReferenceInfoUserDataKey = Key.create<ReferenceInfo>(SourceKeyName)
+val targetReferenceInfoUserDataKey = Key.create<ReferenceInfo>(TargetKeyName)
 
 @Suppress("Unused")
-val PsiReference.referenceInfo: ReferenceInfo
+val PsiReference?.referenceInfo: ReferenceInfo
     get() {
+        this ?: return UNKNOWN
         val source = element
         val data = source.getUserData(sourceReferenceInfoUserDataKey)
         if (data != null) return data
@@ -125,7 +128,7 @@ private fun KtSimpleNameReference.getReferenceInfo(resolvedTarget: PsiElement?):
     }
 }
 
-private val PsiElement.targetType: IReferenceTargetType?
+val PsiElement.targetType: IReferenceTargetType?
     get() = when (this) {
         is KtClassOrObject -> when(this) {
             is KtClass -> when {
@@ -140,6 +143,7 @@ private val PsiElement.targetType: IReferenceTargetType?
         }
 
         is KtProperty -> Property
-        is KtFunction -> Method
+        is KtFunction, is PsiMethod -> Method
+        is PsiFile -> File
         else -> null
     }
