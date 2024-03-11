@@ -6,6 +6,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiRecursiveElementVisitor
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.jetbrains.kotlin.idea.references.KtDefaultAnnotationArgumentReference
 import org.jgrapht.graph.DefaultDirectedGraph
 import org.jgrapht.nio.DefaultAttribute
 import org.jgrapht.nio.dot.DOTExporter
@@ -60,10 +61,21 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                 it.accept(object : PsiRecursiveElementVisitor() {
                     override fun visitElement(element: PsiElement) {
                         elementGraph.addVertex(element)
-                        val target = element.reference?.resolve()
-                        val referenceInfo = element.reference?.referenceInfo
-                        if (target != null && target in elementGraph.vertexSet() && referenceInfo != UNKNOWN) {
-                            elementGraph.addEdge(element, target, GrammarOrRefEdge(referenceInfo))
+                        val reference = element.reference ?: return
+                        val targets = reference.multiResolveToElement()
+                        val referenceInfos = reference.referenceInfos
+                        require(targets.size == referenceInfos.size)
+                        for ((i, target) in targets.withIndex()) {
+                            val referenceInfo = referenceInfos[i]
+                            if (referenceInfo === UNKNOWN && element !== target
+                                && reference !is KtDefaultAnnotationArgumentReference) {
+                                reference.referenceInfos
+                                logger.info { "unknown reference info at source: ${element.posStr()}, target: ${target.posStr()}" }
+                            }
+                            if (target in elementGraph.vertexSet() && referenceInfo != UNKNOWN) {
+                                elementGraph.addEdge(element, target, GrammarOrRefEdge(referenceInfo))
+                            }
+
                         }
                         super.visitElement(element)
                     }

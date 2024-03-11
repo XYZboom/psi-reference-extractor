@@ -2,6 +2,7 @@ package com.github.xyzboom.extractor
 
 import com.github.xyzboom.extractor.ReferenceInfo.Companion.UNKNOWN
 import com.github.xyzboom.extractor.types.*
+import com.github.xyzboom.extractor.types.Annotation
 import com.github.xyzboom.extractor.types.Call
 import com.github.xyzboom.extractor.types.Class
 import com.intellij.lang.java.JavaLanguage
@@ -14,6 +15,7 @@ import com.intellij.psi.PsiJavaReference
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.PsiNewExpression
+import com.intellij.psi.PsiPolyVariantReference
 import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceExpression
 import org.jetbrains.kotlin.idea.KotlinLanguage
@@ -21,139 +23,185 @@ import org.jetbrains.kotlin.idea.references.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 
-private const val SourceKeyName = "KeySourceReferenceInfo\$Extractor"
-private const val TargetKeyName = "KeyTargetReferenceInfo\$Extractor"
-val sourceReferenceInfoUserDataKey = Key.create<ReferenceInfo>(SourceKeyName)
-val targetReferenceInfoUserDataKey = Key.create<ReferenceInfo>(TargetKeyName)
+private const val SourceKeyName = "KeySourceReferenceInfos\$Extractor"
+val sourceReferenceInfoUserDataKey = Key.create<List<ReferenceInfo>>(SourceKeyName)
 
-@Suppress("Unused")
-val PsiReference?.referenceInfo: ReferenceInfo
+fun PsiReference.multiResolveToElement(): List<PsiElement> {
+    return if (this is PsiPolyVariantReference) {
+        multiResolve(false).map { it.element }
+    } else {
+        listOf(resolve())
+    }.filterNotNull()
+}
+
+val PsiReference?.referenceInfos: List<ReferenceInfo>
     get() {
-        this ?: return UNKNOWN
+        this ?: return listOf()
         val source = element
         val data = source.getUserData(sourceReferenceInfoUserDataKey)
         if (data != null) return data
-        val resolvedTarget = resolve()
+        val resolvedTargets = multiResolveToElement()
 
-        val referenceInfo = when (this) {
+        val referenceInfo: List<ReferenceInfo> = when (this) {
             is KtReference -> {
-                if (resolvedTarget != null) getReferenceInfo(resolvedTarget)
+                if (resolvedTargets.isNotEmpty()) getReferenceInfos(resolvedTargets)
                 else {
                     val references = source.references
                     for (ref in references) {
-                        val resolved = ref.resolve()
-                        if (resolved != null && ref is KtReference) {
-                            return ref.getReferenceInfo(resolved)
+                        val resolved = ref.multiResolveToElement()
+                        if (resolved.isNotEmpty() && ref is KtReference) {
+                            return ref.getReferenceInfos(resolved)
                         }
                     }
-                    UNKNOWN
+                    listOf()
                 }
             }
 
-            is PsiJavaReference -> getReferenceInfo(resolvedTarget)
-            else -> UNKNOWN
+            is PsiJavaReference -> getReferenceInfos(resolvedTargets)
+            else -> listOf()
         }
-        if (referenceInfo !== UNKNOWN) {
+        if (referenceInfo.isNotEmpty() && referenceInfo.any { it !== UNKNOWN }) {
             source.putUserData(sourceReferenceInfoUserDataKey, referenceInfo)
-            resolvedTarget?.putUserData(targetReferenceInfoUserDataKey, referenceInfo)
-            return referenceInfo
         }
-        return UNKNOWN
+        return referenceInfo
     }
 
-fun PsiJavaReference.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo =
+fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> =
     when {
-        this is PsiReferenceExpression -> getReferenceInfo(resolvedTarget)
-        element.parent is PsiNewExpression -> ReferenceInfo(
-            JavaLanguage.INSTANCE, resolvedTarget?.language,
-            Create, resolvedTarget?.targetType
-        )
+        this is PsiReferenceExpression -> getReferenceInfos(resolvedTargets)
+        element.parent is PsiNewExpression -> resolvedTargets.map { resolvedTarget ->
+            ReferenceInfo(
+                JavaLanguage.INSTANCE, resolvedTarget.language,
+                Create, resolvedTarget.targetType
+            )
+        }
 
-        else -> UNKNOWN
+        else -> listOf()
     }
 
-private fun PsiReferenceExpression.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo =
+private fun PsiReferenceExpression.getReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> =
     if (parent is PsiMethodCallExpression) {
-        if (resolvedTarget != null) {
-            if (resolvedTarget.language === JavaLanguage.INSTANCE) {
-                ReferenceInfo(JavaLanguage.INSTANCE, JavaLanguage.INSTANCE, Call, Method)
-            } else if (resolvedTarget.language === KotlinLanguage.INSTANCE) {
-                val targetType = if (resolvedTarget is KtProperty) Property else Method
-                ReferenceInfo(JavaLanguage.INSTANCE, KotlinLanguage.INSTANCE, Call, targetType)
-            } else UNKNOWN
+        if (resolvedTargets.isNotEmpty()) {
+            resolvedTargets.map { resolvedTarget ->
+                if (resolvedTarget.language === JavaLanguage.INSTANCE) {
+                    ReferenceInfo(JavaLanguage.INSTANCE, JavaLanguage.INSTANCE, Call, Method)
+                } else if (resolvedTarget.language === KotlinLanguage.INSTANCE) {
+                    val targetType = if (resolvedTarget is KtProperty) Property else Method
+                    ReferenceInfo(JavaLanguage.INSTANCE, KotlinLanguage.INSTANCE, Call, targetType)
+                } else UNKNOWN
+            }
         } else {
-            ReferenceInfo(JavaLanguage.INSTANCE, null, Call, null)
+            listOf(ReferenceInfo(JavaLanguage.INSTANCE, null, Call, null))
         }
-    } else UNKNOWN
+    } else listOf(UNKNOWN)
 
-private fun KtReference.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo =
+private fun KtReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> =
     when (this) {
-        is KDocReference -> UNKNOWN
-        is SyntheticPropertyAccessorReference -> getReferenceInfo(resolvedTarget)
-        is KtArrayAccessReference -> UNKNOWN
-        is KtCollectionLiteralReference -> UNKNOWN
-        is KtConstructorDelegationReference -> UNKNOWN
-        is KtDestructuringDeclarationReference -> UNKNOWN
-        is KtForLoopInReference -> UNKNOWN
-        is KtInvokeFunctionReference -> UNKNOWN
-        is KtPropertyDelegationMethodsReference -> UNKNOWN
-        is KtSimpleNameReference -> getReferenceInfo(resolvedTarget)
-        is KtDefaultAnnotationArgumentReference -> UNKNOWN
+        is KDocReference -> listOf(UNKNOWN)
+        is SyntheticPropertyAccessorReference -> getSyntheticPropertyAccessorReferenceInfo(resolvedTargets)
+        is KtArrayAccessReference -> getKtArrayAccessReferenceInfo(resolvedTargets)
+        is KtCollectionLiteralReference -> listOf(UNKNOWN)
+        is KtConstructorDelegationReference -> {
+            resolvedTargets.map { resolvedTarget ->
+                require(resolvedTarget.targetType == Constructor)
+                ReferenceInfo(KotlinLanguage.INSTANCE, resolvedTarget.language, Call, Constructor)
+            }
+        }
+
+        is KtDestructuringDeclarationReference -> listOf(UNKNOWN)
+        is KtForLoopInReference, is KtInvokeFunctionReference -> {
+            resolvedTargets.map { resolvedTarget ->
+                require(resolvedTarget.targetType == Method)
+                ReferenceInfo(KotlinLanguage.INSTANCE, resolvedTarget.language, Call, Method)
+            }
+        }
+
+        is KtPropertyDelegationMethodsReference -> {
+            resolvedTargets.map { resolvedTarget ->
+                require(resolvedTarget.targetType == Method)
+                ReferenceInfo(KotlinLanguage.INSTANCE, resolvedTarget.language, PropertyDelegate, Method)
+            }
+        }
+
+        is KtSimpleNameReference -> getReferenceInfos(resolvedTargets)
+        is KtDefaultAnnotationArgumentReference -> listOf(UNKNOWN)
         else -> throw ExtractorException("Unsupported reference type: ${this::class.java}")
     }
 
-private fun SyntheticPropertyAccessorReference.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo {
-    if (resolvedTarget != null) {
-        val targetLanguage = resolvedTarget.language
-        if (targetLanguage === JavaLanguage.INSTANCE) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, JavaLanguage.INSTANCE, Access, Method)
-        } else if (targetLanguage === KotlinLanguage.INSTANCE) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, KotlinLanguage.INSTANCE, Access, Property)
+private fun getKtArrayAccessReferenceInfo(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
+    return resolvedTargets.map { resolvedTarget ->
+        val targetType = resolvedTarget.targetType
+        when (targetType) {
+            // kotlin array access operator reload
+            Method -> ReferenceInfo(KotlinLanguage.INSTANCE, resolvedTarget.language, Call, Method)
+            else -> UNKNOWN
         }
-        return UNKNOWN
-    } else {
-        return UNKNOWN
     }
 }
 
-private fun KtSimpleNameReference.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo {
-    if (resolvedTarget != null) {
+private fun getSyntheticPropertyAccessorReferenceInfo(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
+    return resolvedTargets.map { resolvedTarget ->
+        val targetLanguage = resolvedTarget.language
+        return@map if (targetLanguage === JavaLanguage.INSTANCE) {
+            ReferenceInfo(KotlinLanguage.INSTANCE, JavaLanguage.INSTANCE, Access, Method)
+        } else if (targetLanguage === KotlinLanguage.INSTANCE) {
+            ReferenceInfo(KotlinLanguage.INSTANCE, KotlinLanguage.INSTANCE, Access, Property)
+        } else UNKNOWN
+    }
+}
+
+private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
+    return resolvedTargets.map { resolvedTarget ->
         val targetLanguage = resolvedTarget.language
         val targetType = resolvedTarget.targetType
-        if (element.parent is KtCallExpression) {
-            if (resolvedTarget is KtConstructor<*> || targetType === Class) {
-                return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Create, Class)
+        return@map if (element.parent is KtCallExpression) {
+            if (resolvedTarget is KtConstructor<*> || targetType == Class || targetType == Constructor) {
+                ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Create, targetType)
+            } else {
+                ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Call, targetType)
             }
-            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Call, targetType)
         } else if (element.getParentOfType<KtImportList>(false) != null) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Import, targetType)
+            ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Import, targetType)
         } else if (element.getParentOfType<KtSuperTypeEntry>(false) != null) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Implement, targetType)
+            ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Implement, targetType)
         } else if (element.getParentOfType<KtSuperTypeCallEntry>(false) != null) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Extend, targetType)
+            ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Extend, targetType)
+        } else if (element.getParentOfType<KtAnnotationEntry>(false) != null) {
+            ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Create, targetType)
+        } else {
+            ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Access, targetType)
         }
-        return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Access, targetType)
-    } else {
-        return UNKNOWN
     }
 }
 
 val PsiElement.targetType: IReferenceTargetType?
     get() = when (this) {
-        is KtClassOrObject -> when(this) {
-            is KtClass -> when {
-                isInterface() -> Interface
+        is KtConstructor<*> -> Constructor
+        is KtClassOrObject ->
+            when (this) {
+                is KtClass -> when {
+                    isInterface() -> Interface
+                    isAnnotation() -> Annotation
+                    else -> Class
+                }
+
                 else -> Class
             }
-            else -> Class
-        }
-        is PsiClass -> when {
-            isInterface -> Interface
-            else -> Class
-        }
+
+        is PsiClass ->
+            when {
+                isInterface -> Interface
+                isAnnotationType -> Annotation
+                else -> Class
+            }
 
         is KtProperty -> Property
-        is KtFunction, is PsiMethod -> Method
+        is KtFunction -> Method
+        is PsiMethod ->
+            if (isConstructor) {
+                Constructor
+            } else Method
+
         is PsiFile -> File
         is PsiField -> Field
         else -> null
