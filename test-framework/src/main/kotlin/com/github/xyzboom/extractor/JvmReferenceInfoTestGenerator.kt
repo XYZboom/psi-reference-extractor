@@ -12,6 +12,7 @@ object JvmReferenceInfoTestGenerator {
     private const val TEST_DATA_PATH = "src/testData/jvm/"
     private const val TEST_OUTPUT_PATH = "src/test/kotlin/com/github/xyzboom/extractor/generated/JvmReferenceInfoTest.kt"
     private const val RESULT_FILE_NAME = "result"
+    private const val EXTRA_SCRIPTS_FILE_NAME = "extra"
     private const val MAIN_TEST_CLASS_NAME = "JvmReferenceInfoTest"
     private val sb = StringBuilder()
     private val fileStateStack = Stack<Pair<File, StringBuilder>>()
@@ -28,12 +29,16 @@ object JvmReferenceInfoTestGenerator {
         val testName = "test_$testNameDir"
         val (file, sb) = fileStateStack.peek()
         require(File(file, testNameDir) == dir)
+        val extraScriptsFile = File(dir, EXTRA_SCRIPTS_FILE_NAME)
         sb.append(
             """
             |@Test
             |fun $testName() {
             |    initCompilerEnv(Path.of(${"\"\"\""}${dir.path}${"\"\"\""}))
-            |    doValidate(${"\"\"\""}${Path(dir.path, RESULT_FILE_NAME)}${"\"\"\""})
+            |    doValidate(
+            |        ${"\"\"\""}${Path(dir.path, RESULT_FILE_NAME)}${"\"\"\""},
+            |        ${if (extraScriptsFile.exists()) "${"\"\"\""}${extraScriptsFile.path}${"\"\"\""}" else "null"}
+            |    )
             |}
             |
         """.replaceIndentByMargin(" " * 4)
@@ -102,7 +107,7 @@ object JvmReferenceInfoTestGenerator {
             |import org.junit.jupiter.api.Test
             |import java.nio.file.Path
             |
-            |class $MAIN_TEST_CLASS_NAME: BaseJvmReferenceInfoTester() {
+            |class $MAIN_TEST_CLASS_NAME : BaseJvmReferenceInfoTester() {
             |
         """.trimMargin()
         )

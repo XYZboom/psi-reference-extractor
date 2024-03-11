@@ -10,11 +10,20 @@
             <pattern>%d [%thread] %-5level %logger{36} [%file:%line] - %msg%n</pattern>
         </encoder>
     </appender>
+    <appender name="file" class="ch.qos.logback.core.FileAppender">
+        <file>./log.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d [%thread] %-5level %logger{36} [%file:%line] - %msg%n</pattern>
+        </encoder>
+    </appender>
 
     <root level="trace">
         <appender-ref ref="stdout"/>
     </root>
 
-    <logger name="com.github.xyzboom.extractor" level="trace"/>
+    <logger name="com.github.xyzboom.extractor" level="trace">
+        <appender-ref ref="file"/>
+    </logger>
     <logger name="ch.qos.logback.classic" level="error" additivity="false" ref="stdout"/>
 </configuration>

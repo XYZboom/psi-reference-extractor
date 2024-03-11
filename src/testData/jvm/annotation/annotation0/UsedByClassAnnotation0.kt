@@ -1,3 +1,3 @@
-package `kotlin-code-examples`.annotation.annotation0
+package annotation.annotation0
 
-annotation class UsedByClassAnnotation0
+/*<target>*/annotation class UsedByClassAnnotation0/*<target/>*/

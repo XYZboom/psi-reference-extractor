@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.idea.references.KotlinReferenceProviderContributor
 import org.jetbrains.kotlin.idea.references.ReadWriteAccessChecker
 import org.jetbrains.kotlin.psi.KotlinReferenceProvidersService
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.references.fe10.base.DummyKtFe10ReferenceResolutionHelper
 import org.jetbrains.kotlin.references.fe10.base.KtFe10KotlinReferenceProviderContributor
 import org.jetbrains.kotlin.references.fe10.base.KtFe10ReferenceResolutionHelper
@@ -188,6 +189,13 @@ open class KotlinJvmCompilerContext {
 
     private fun kotlinStdLibPath(): File {
         return File(CharRange::class.java.protectionDomain.codeSource.location.path)
+    }
+
+    protected fun PsiElement.posStr(): String {
+        val document = psiDocumentManager.getDocument(containingFile)!!
+        val startLine = document.getLineNumber(startOffset)
+        val startCol = startOffset - document.getLineStartOffset(startLine)
+        return "file:///${containingFile.virtualFile.path}:${startLine + 1}:${startCol + 1}"
     }
 
     class MyMessageCollector : MessageCollector by MessageCollector.NONE {
