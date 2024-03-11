@@ -26,4 +26,8 @@ data class ReferenceInfo(
         @JvmStatic
         val UNKNOWN = ReferenceInfo(Language.ANY, null, Unknown, null)
     }
+
+    override fun toString(): String {
+        return "ReferenceInfo(${sourceLanguage.displayName.ifEmpty { "ANY" }} $sourceType ${targetLanguage?.displayName} $targetType)"
+    }
 }

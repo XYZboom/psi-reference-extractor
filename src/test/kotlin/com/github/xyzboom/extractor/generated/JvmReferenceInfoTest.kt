@@ -12,6 +12,17 @@ class JvmReferenceInfoTest: BaseJvmReferenceInfoTester() {
     inner class ExpressionTest {
     
         @Nested
+        inner class AccessTest {
+            @Test
+            fun test_kotlinAccessJavaMethod0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\access\kotlinAccessJavaMethod0"""))
+                doValidate("""src\testData\jvm\expression\access\kotlinAccessJavaMethod0\result""")
+            }
+    
+    
+        }
+        
+        @Nested
         inner class CallTest {
             @Test
             fun test_call0() {
@@ -102,6 +113,18 @@ class JvmReferenceInfoTest: BaseJvmReferenceInfoTester() {
                 doValidate("""src\testData\jvm\expression\create\createWithNoArgConstructor\result""")
             }
     
+            @Test
+            fun test_javaCreate0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\create\javaCreate0"""))
+                doValidate("""src\testData\jvm\expression\create\javaCreate0\result""")
+            }
+    
+            @Test
+            fun test_javaCreate1() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\create\javaCreate1"""))
+                doValidate("""src\testData\jvm\expression\create\javaCreate1\result""")
+            }
+    
     
         }
     
@@ -133,7 +156,34 @@ class JvmReferenceInfoTest: BaseJvmReferenceInfoTester() {
     
         }
     
-
+    }
+        
+    @Nested
+    inner class InheritTest {
+        @Test
+        fun test_inherit0() {
+            initCompilerEnv(Path.of("""src\testData\jvm\inherit\inherit0"""))
+            doValidate("""src\testData\jvm\inherit\inherit0\result""")
+        }
+    
+        @Test
+        fun test_inherit1() {
+            initCompilerEnv(Path.of("""src\testData\jvm\inherit\inherit1"""))
+            doValidate("""src\testData\jvm\inherit\inherit1\result""")
+        }
+    
+    
+    }
+        
+    @Nested
+    inner class PropertyTest {
+        @Test
+        fun test_javaFieldAsProperty() {
+            initCompilerEnv(Path.of("""src\testData\jvm\property\javaFieldAsProperty"""))
+            doValidate("""src\testData\jvm\property\javaFieldAsProperty\result""")
+        }
+    
+    
     }
     
 }

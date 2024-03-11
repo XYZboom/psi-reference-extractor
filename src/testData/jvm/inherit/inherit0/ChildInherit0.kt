@@ -1,30 +1,6 @@
-package `kotlin-code-examples`.inherit.inherit0
+package inherit.inherit0
 
-class ChildInherit0 : ParentInherit0() {
+class ChildInherit0 : /*<source>*/ParentInherit0/*<source/>*/() {
     fun func() {
-        /*if(a) {
-        } else if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else  if(a) {
-        } else {}*/
     }
 }

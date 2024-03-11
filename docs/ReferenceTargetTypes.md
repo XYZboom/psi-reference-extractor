@@ -2,13 +2,14 @@
 
 List of reference types from the perspective of the target element.
 
-- [Class](##Class)
-- [Property](##Property)
-- [Method](##Method)
+- [Class](#Class)
+- [Interface](#Interface)
+- [Property](#Property)
+- [Method](#Method)
 
 ## Class
 
-Reference whose target is a class or interface.
+Reference whose target is a class.
 
 ### Code Samples
 
@@ -29,6 +30,10 @@ import target.Target;
 //            ^^^^^^
 // reference here has the source type "import"
 ```
+
+## Interface
+
+Reference whose target is a interface.
 
 ## Property
 

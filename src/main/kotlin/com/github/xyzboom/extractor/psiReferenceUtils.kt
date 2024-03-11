@@ -8,8 +8,12 @@ import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiJavaReference
+import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
+import com.intellij.psi.PsiNewExpression
 import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceExpression
 import org.jetbrains.kotlin.idea.KotlinLanguage
@@ -19,22 +23,31 @@ import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 
 private const val SourceKeyName = "KeySourceReferenceInfo\$Extractor"
 private const val TargetKeyName = "KeyTargetReferenceInfo\$Extractor"
-private val sourceReferenceInfoUserDataKey = Key.create<ReferenceInfo>(SourceKeyName)
-private val targetReferenceInfoUserDataKey = Key.create<ReferenceInfo>(TargetKeyName)
+val sourceReferenceInfoUserDataKey = Key.create<ReferenceInfo>(SourceKeyName)
+val targetReferenceInfoUserDataKey = Key.create<ReferenceInfo>(TargetKeyName)
 
 @Suppress("Unused")
-val PsiReference.referenceInfo: ReferenceInfo
+val PsiReference?.referenceInfo: ReferenceInfo
     get() {
+        this ?: return UNKNOWN
         val source = element
         val data = source.getUserData(sourceReferenceInfoUserDataKey)
         if (data != null) return data
         val resolvedTarget = resolve()
 
-        @Suppress("RecursivePropertyAccessor")
         val referenceInfo = when (this) {
             is KtReference -> {
-                if (this === element.mainReference) getReferenceInfo(resolvedTarget)
-                else element.mainReference!!.referenceInfo
+                if (resolvedTarget != null) getReferenceInfo(resolvedTarget)
+                else {
+                    val references = source.references
+                    for (ref in references) {
+                        val resolved = ref.resolve()
+                        if (resolved != null && ref is KtReference) {
+                            return ref.getReferenceInfo(resolved)
+                        }
+                    }
+                    UNKNOWN
+                }
             }
 
             is PsiJavaReference -> getReferenceInfo(resolvedTarget)
@@ -48,11 +61,16 @@ val PsiReference.referenceInfo: ReferenceInfo
         return UNKNOWN
     }
 
-fun PsiJavaReference.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo = when (this) {
-    is PsiReferenceExpression -> getReferenceInfo(resolvedTarget)
+fun PsiJavaReference.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo =
+    when {
+        this is PsiReferenceExpression -> getReferenceInfo(resolvedTarget)
+        element.parent is PsiNewExpression -> ReferenceInfo(
+            JavaLanguage.INSTANCE, resolvedTarget?.language,
+            Create, resolvedTarget?.targetType
+        )
 
-    else -> UNKNOWN
-}
+        else -> UNKNOWN
+    }
 
 private fun PsiReferenceExpression.getReferenceInfo(resolvedTarget: PsiElement?): ReferenceInfo =
     if (parent is PsiMethodCallExpression) {
@@ -75,11 +93,12 @@ private fun KtReference.getReferenceInfo(resolvedTarget: PsiElement?): Reference
         is KtArrayAccessReference -> UNKNOWN
         is KtCollectionLiteralReference -> UNKNOWN
         is KtConstructorDelegationReference -> UNKNOWN
-        is KtDestructuringDeclarationEntry -> UNKNOWN
+        is KtDestructuringDeclarationReference -> UNKNOWN
         is KtForLoopInReference -> UNKNOWN
         is KtInvokeFunctionReference -> UNKNOWN
         is KtPropertyDelegationMethodsReference -> UNKNOWN
         is KtSimpleNameReference -> getReferenceInfo(resolvedTarget)
+        is KtDefaultAnnotationArgumentReference -> UNKNOWN
         else -> throw ExtractorException("Unsupported reference type: ${this::class.java}")
     }
 
@@ -87,9 +106,9 @@ private fun SyntheticPropertyAccessorReference.getReferenceInfo(resolvedTarget: 
     if (resolvedTarget != null) {
         val targetLanguage = resolvedTarget.language
         if (targetLanguage === JavaLanguage.INSTANCE) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, JavaLanguage.INSTANCE, Property, Method)
+            return ReferenceInfo(KotlinLanguage.INSTANCE, JavaLanguage.INSTANCE, Access, Method)
         } else if (targetLanguage === KotlinLanguage.INSTANCE) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, KotlinLanguage.INSTANCE, Property, Property)
+            return ReferenceInfo(KotlinLanguage.INSTANCE, KotlinLanguage.INSTANCE, Access, Property)
         }
         return UNKNOWN
     } else {
@@ -108,17 +127,34 @@ private fun KtSimpleNameReference.getReferenceInfo(resolvedTarget: PsiElement?):
             return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Call, targetType)
         } else if (element.getParentOfType<KtImportList>(false) != null) {
             return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Import, targetType)
+        } else if (element.getParentOfType<KtSuperTypeEntry>(false) != null) {
+            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Implement, targetType)
+        } else if (element.getParentOfType<KtSuperTypeCallEntry>(false) != null) {
+            return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Extend, targetType)
         }
-        return UNKNOWN
+        return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Access, targetType)
     } else {
         return UNKNOWN
     }
 }
 
-private val PsiElement.targetType: IReferenceTargetType?
+val PsiElement.targetType: IReferenceTargetType?
     get() = when (this) {
-        is PsiClass, is KtClassOrObject -> Class
+        is KtClassOrObject -> when(this) {
+            is KtClass -> when {
+                isInterface() -> Interface
+                else -> Class
+            }
+            else -> Class
+        }
+        is PsiClass -> when {
+            isInterface -> Interface
+            else -> Class
+        }
+
         is KtProperty -> Property
-        is KtFunction -> Method
+        is KtFunction, is PsiMethod -> Method
+        is PsiFile -> File
+        is PsiField -> Field
         else -> null
     }

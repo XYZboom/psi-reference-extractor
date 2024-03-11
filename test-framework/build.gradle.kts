@@ -24,6 +24,7 @@ kotlin {
 }
 
 val generateJvmTest = tasks.register<JavaExec>("GenerateJvmTest") {
+    inputs.dir("${rootProject.rootDir}/src/testData")
     group = "generate"
     mainClass = "com.github.xyzboom.extractor.JvmReferenceInfoTestGenerator"
     group = "Generate"

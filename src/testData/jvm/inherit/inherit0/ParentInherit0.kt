@@ -1,3 +1,3 @@
-package `kotlin-code-examples`.inherit.inherit0
+package inherit.inherit0
 
-open class ParentInherit0
+/*<target>*/open class ParentInherit0/*<target/>*/
