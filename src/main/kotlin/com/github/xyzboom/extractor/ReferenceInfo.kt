@@ -28,6 +28,6 @@ data class ReferenceInfo(
     }
 
     override fun toString(): String {
-        return "ReferenceInfo(${sourceLanguage.displayName} $sourceType ${targetLanguage?.displayName} $targetType)"
+        return "ReferenceInfo(${sourceLanguage.displayName.ifEmpty { "ANY" }} $sourceType ${targetLanguage?.displayName} $targetType)"
     }
 }

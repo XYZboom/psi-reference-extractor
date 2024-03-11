@@ -242,15 +242,15 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
         start: CommentInFile,
         end: CommentInFile
     ) {
-        val resolved = sourceElement.reference?.resolve()
-        if (!targetElement.isEquivalentTo(resolved)) {
+        val resolved = sourceElement.references.mapNotNull { it.resolve() }
+        if (resolved.none { it.isEquivalentTo(targetElement) }) {
             val failMessage = "resolved reference must be target element!" +
                     " fail on source between ${sourceStartMap[key]!!.first.posStr()} and ${sourceEndMap[key]!!.first.posStr()}, " +
                     "end between ${start.first.posStr()} and ${end.first.posStr()}"
-            if (resolved !is KtLightElement<*, *>) {
+            if (resolved.none { it is KtLightElement<*, *> }) {
                 fail(failMessage)
             }
-            if (!targetElement.isEquivalentTo(resolved.kotlinOrigin)) {
+            if (!targetElement.isEquivalentTo((resolved.first { it is KtLightElement<*, *> } as KtLightElement<*, *>).kotlinOrigin)) {
                 fail(failMessage)
             }
         }

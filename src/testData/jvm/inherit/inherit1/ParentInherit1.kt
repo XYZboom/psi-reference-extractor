@@ -1,4 +1,4 @@
-package `kotlin-code-examples`.inherit.inherit1
+package inherit.inherit1
 
-open class ParentInherit1 {
-}
+/*<target:ParentInherit1>*/open class ParentInherit1 {
+}/*<target:ParentInherit1/>*/
