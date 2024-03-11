@@ -4,7 +4,8 @@ List of reference types from the perspective of the source element.
 
 - [Import](#Import)
 - [Call](#Call)
-- [Property](#Property)
+- [Access](#Access)
+- [Access Reference](#Access-Reference)
 - [Create](#Create)
 - [Extend](#Extend)
 - [Implement](#Implement)
@@ -97,9 +98,11 @@ class Target {
 }
 ```
 
-## Property
+## Access
 
-Reference whose source located at property access expression.
+Reference whose source located at property (or field in java) access expression.
+
+Some Java methods are considered as Kotlin properties. At this point, the resolution is "Kotlin access Java method", rather than "Kotlin call Java method".
 
 ### Code Samples
 
@@ -113,7 +116,7 @@ fun func() {
     val target = Target()
     target.string
 //         ^^^^^^
-//  reference here has the source type "property"
+//  reference here has the source type "access"
 }
 ```
 
@@ -126,6 +129,37 @@ class Target {
 //  reference above targets here and has the target type "property"
 }
 ```
+
+## Access Reference
+
+Reference whose source located at property or method **reference** access expression.
+
+### Code Samples
+
+#### Kotlin access reference (of) Kotlin method
+
+```kotlin
+// Source.kt
+package source
+import target.targetFunc
+fun func(input: List<String>) {
+    input.forEach(::targetFunc)
+//                ^^^^^^^^^^^^
+//  reference here has the source type "access reference"
+//                  ^^^^^^^^^^
+//  In PSI, PsiRefence is always bind to element here.
+}
+```
+
+```kotlin
+// Target.kt
+package target
+   fun targetFunc(str: String) {}
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// reference above targets here and has the target type "method"
+```
+
+
 
 ## Create
 

@@ -8,6 +8,7 @@ import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiField
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiJavaReference
 import com.intellij.psi.PsiMethod
@@ -34,11 +35,19 @@ val PsiReference?.referenceInfo: ReferenceInfo
         if (data != null) return data
         val resolvedTarget = resolve()
 
-        @Suppress("RecursivePropertyAccessor")
         val referenceInfo = when (this) {
             is KtReference -> {
-                if (this === element.mainReference) getReferenceInfo(resolvedTarget)
-                else element.mainReference!!.referenceInfo
+                if (resolvedTarget != null) getReferenceInfo(resolvedTarget)
+                else {
+                    val references = source.references
+                    for (ref in references) {
+                        val resolved = ref.resolve()
+                        if (resolved != null && ref is KtReference) {
+                            return ref.getReferenceInfo(resolved)
+                        }
+                    }
+                    UNKNOWN
+                }
             }
 
             is PsiJavaReference -> getReferenceInfo(resolvedTarget)
@@ -89,6 +98,7 @@ private fun KtReference.getReferenceInfo(resolvedTarget: PsiElement?): Reference
         is KtInvokeFunctionReference -> UNKNOWN
         is KtPropertyDelegationMethodsReference -> UNKNOWN
         is KtSimpleNameReference -> getReferenceInfo(resolvedTarget)
+        is KtDefaultAnnotationArgumentReference -> UNKNOWN
         else -> throw ExtractorException("Unsupported reference type: ${this::class.java}")
     }
 
@@ -96,9 +106,9 @@ private fun SyntheticPropertyAccessorReference.getReferenceInfo(resolvedTarget: 
     if (resolvedTarget != null) {
         val targetLanguage = resolvedTarget.language
         if (targetLanguage === JavaLanguage.INSTANCE) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, JavaLanguage.INSTANCE, Property, Method)
+            return ReferenceInfo(KotlinLanguage.INSTANCE, JavaLanguage.INSTANCE, Access, Method)
         } else if (targetLanguage === KotlinLanguage.INSTANCE) {
-            return ReferenceInfo(KotlinLanguage.INSTANCE, KotlinLanguage.INSTANCE, Property, Property)
+            return ReferenceInfo(KotlinLanguage.INSTANCE, KotlinLanguage.INSTANCE, Access, Property)
         }
         return UNKNOWN
     } else {
@@ -122,7 +132,7 @@ private fun KtSimpleNameReference.getReferenceInfo(resolvedTarget: PsiElement?):
         } else if (element.getParentOfType<KtSuperTypeCallEntry>(false) != null) {
             return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Extend, targetType)
         }
-        return UNKNOWN
+        return ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Access, targetType)
     } else {
         return UNKNOWN
     }
@@ -145,5 +155,6 @@ val PsiElement.targetType: IReferenceTargetType?
         is KtProperty -> Property
         is KtFunction, is PsiMethod -> Method
         is PsiFile -> File
+        is PsiField -> Field
         else -> null
     }

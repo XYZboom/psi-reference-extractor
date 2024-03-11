@@ -196,7 +196,7 @@ open class KotlinJvmCompilerContext {
             message: String,
             location: CompilerMessageSourceLocation?
         ) {
-            print(message)
+//            print(message)
         }
     }
 }
