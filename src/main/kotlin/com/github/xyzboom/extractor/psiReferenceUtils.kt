@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.references.*
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
+import org.jetbrains.kotlin.psi.psiUtil.isPropertyParameter
 
 private const val SourceKeyName = "KeySourceReferenceInfos\$Extractor"
 val sourceReferenceInfoUserDataKey = Key.create<List<ReferenceInfo>>(SourceKeyName)
@@ -31,7 +32,7 @@ fun PsiReference.multiResolveToElement(): List<PsiElement> {
         multiResolve(false).map { it.element }
     } else {
         listOf(resolve())
-    }.filterNotNull()
+    }.filter { it != null && it !== element }.filterNotNull()
 }
 
 val PsiReference?.referenceInfos: List<ReferenceInfo>
@@ -98,8 +99,8 @@ private fun PsiReferenceExpression.getReferenceInfos(resolvedTargets: List<PsiEl
 private fun KtReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> =
     when (this) {
         is KDocReference -> listOf(UNKNOWN)
-        is SyntheticPropertyAccessorReference -> getSyntheticPropertyAccessorReferenceInfo(resolvedTargets)
-        is KtArrayAccessReference -> getKtArrayAccessReferenceInfo(resolvedTargets)
+        is SyntheticPropertyAccessorReference -> getSyntheticPropertyAccessorReferenceInfos(resolvedTargets)
+        is KtArrayAccessReference -> getKtArrayAccessReferenceInfos(resolvedTargets)
         is KtCollectionLiteralReference -> listOf(UNKNOWN)
         is KtConstructorDelegationReference -> {
             resolvedTargets.map { resolvedTarget ->
@@ -108,7 +109,7 @@ private fun KtReference.getReferenceInfos(resolvedTargets: List<PsiElement>): Li
             }
         }
 
-        is KtDestructuringDeclarationReference -> listOf(UNKNOWN)
+        is KtDestructuringDeclarationReference -> getDestructuringDeclarationReferenceInfos(resolvedTargets)
         is KtForLoopInReference, is KtInvokeFunctionReference -> {
             resolvedTargets.map { resolvedTarget ->
                 require(resolvedTarget.targetType == Method)
@@ -128,7 +129,18 @@ private fun KtReference.getReferenceInfos(resolvedTargets: List<PsiElement>): Li
         else -> throw ExtractorException("Unsupported reference type: ${this::class.java}")
     }
 
-private fun getKtArrayAccessReferenceInfo(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
+private fun getDestructuringDeclarationReferenceInfos(resolvedTargets: List<PsiElement>) =
+    resolvedTargets.map { resolvedTarget ->
+        ReferenceInfo(
+            KotlinLanguage.INSTANCE,
+            Expression,
+            DestructureCall,
+            resolvedTarget.language,
+            resolvedTarget.targetType
+        )
+    }
+
+private fun getKtArrayAccessReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
     return resolvedTargets.map { resolvedTarget ->
         val targetType = resolvedTarget.targetType
         when (targetType) {
@@ -139,7 +151,7 @@ private fun getKtArrayAccessReferenceInfo(resolvedTargets: List<PsiElement>): Li
     }
 }
 
-private fun getSyntheticPropertyAccessorReferenceInfo(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
+private fun getSyntheticPropertyAccessorReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
     return resolvedTargets.map { resolvedTarget ->
         val targetLanguage = resolvedTarget.language
         return@map if (targetLanguage === JavaLanguage.INSTANCE) {
@@ -185,7 +197,7 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
     }
 }
 
-val PsiElement.targetType: IReferenceTargetType?
+val PsiElement.targetType: IReferenceTargetType
     get() = when (this) {
         is KtConstructor<*> -> Constructor
         is KtClassOrObject ->
@@ -215,5 +227,9 @@ val PsiElement.targetType: IReferenceTargetType?
 
         is PsiFile -> File
         is PsiField -> Field
-        else -> null
+        is KtParameter ->
+            if (isPropertyParameter()) {
+                Property
+            } else Unknown
+        else -> Unknown
     }

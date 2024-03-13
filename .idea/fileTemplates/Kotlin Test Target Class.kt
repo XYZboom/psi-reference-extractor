@@ -1,0 +1,4 @@
+package target
+
+class Target {
+}

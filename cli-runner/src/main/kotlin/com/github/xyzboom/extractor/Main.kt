@@ -61,10 +61,13 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                 it.accept(object : PsiRecursiveElementVisitor() {
                     override fun visitElement(element: PsiElement) {
                         elementGraph.addVertex(element)
-                        val reference = element.reference ?: return
+                        val reference = element.reference ?: kotlin.run {
+                            super.visitElement(element)
+                            return
+                        }
                         val targets = reference.multiResolveToElement()
                         val referenceInfos = reference.referenceInfos
-                        require(targets.size == referenceInfos.size)
+                        require(referenceInfos.size == targets.size)
                         for ((i, target) in targets.withIndex()) {
                             val referenceInfo = referenceInfos[i]
                             if (referenceInfo === UNKNOWN && element !== target
@@ -75,7 +78,6 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                             if (target in elementGraph.vertexSet() && referenceInfo != UNKNOWN) {
                                 elementGraph.addEdge(element, target, GrammarOrRefEdge(referenceInfo))
                             }
-
                         }
                         super.visitElement(element)
                     }
@@ -93,15 +95,6 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                 GrammarOrRefEdge::class.java
             )
             val graph = extractor.doExtractor(elementGraph, allPsiFiles)
-            val set = hashSetOf<PsiElement>()
-            for (element in graph.vertexSet()) {
-                if (graph.edgesOf(element).none(collectEdgeFilter)) {
-                    set.add(element)
-                }
-            }
-            for (element in set) {
-                graph.removeVertex(element)
-            }
             val exporter = DOTExporter<PsiElement, GrammarOrRefEdge>()
             exporter.setVertexAttributeProvider {
                 mapOf("label" to DefaultAttribute.createAttribute(it.toString()))
