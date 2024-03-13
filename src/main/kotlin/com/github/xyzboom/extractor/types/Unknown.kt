@@ -1,3 +1,3 @@
 package com.github.xyzboom.extractor.types
 
-data object Unknown : IReferenceSourceType, IReferenceTargetType
+data object Unknown : IReferenceType, IReferenceTargetType, IReferenceSourceType

@@ -9,6 +9,7 @@ List of reference types from the perspective of the source element.
 - [Create](#Create)
 - [Extend](#Extend)
 - [Implement](#Implement)
+- [Property Delegate](#Property-Delegate)
 
 ## Import
 
@@ -270,3 +271,35 @@ package target
 //^^^^^^^^^^^^^^^^^
 //  reference above targets here and has the target type "interface"
 ```
+
+## Property Delegate
+
+Reference whose source is a property with delegation.
+
+### Code Samples
+
+#### Kotlin property delegate (by) Kotlin method
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+class Source {
+    val myProperty by Target()
+//                 ^^
+//  reference here has the source type "property delegate"
+}
+```
+
+```kotlin
+// Target.kt
+package target
+import kotlin.reflect.KProperty
+
+class Target {
+    operator fun getValue(source: Source, property: KProperty<*>) = property.name
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//  reference above targets here and has the target type "method"
+}
+```
+

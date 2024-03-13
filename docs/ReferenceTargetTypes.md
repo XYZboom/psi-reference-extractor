@@ -6,6 +6,8 @@ List of reference types from the perspective of the target element.
 - [Interface](#Interface)
 - [Property](#Property)
 - [Method](#Method)
+- [Annotation](#Annotation)
+- [Constructor](#Constructor)
 
 ## Class
 
@@ -96,6 +98,61 @@ public class Source {
 //      ^^^^^^^^^^^^^
 //      In PSI, PsiRefence is always bind to element here.
     }
+}
+```
+
+## Annotation
+
+Reference whose target is an annotation type.
+
+### Code Samples
+
+#### Kotlin create Kotlin annotation
+
+```kotlin
+// Target.kt
+package target
+   annotation class Target
+// ^^^^^^^^^^^^^^^^^^^^^^^
+// reference below targets here and has the target type "annotation"
+```
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+    @Target
+//  ^^^^^^^
+//  reference here has the source type "create"
+class Source
+```
+
+## Constructor
+
+Reference whose target is a constructor.
+
+When a reference info is "create constructor", it means source **creates an object** using the target constructor.
+
+### Code Samples
+
+#### Kotlin create Kotlin constructor
+
+```kotlin
+// Target.kt
+package target
+class Target(val x: Int)
+//          ^^^^^^^^^^^^
+// reference below targets here and has the target type "constructor"
+```
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+fun func() {
+    val t = Target(1)
+//          ^^^^^^^^^
+//  reference here has the source type "create"
 }
 ```
 
