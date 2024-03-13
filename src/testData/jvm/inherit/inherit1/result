@@ -1,2 +1,2 @@
-ParentInherit1: kotlin Extend kotlin Class
-InterfaceInherit1: kotlin Implement kotlin Interface
+ParentInherit1: kotlin Class Extend kotlin Class
+InterfaceInherit1: kotlin Class Implement kotlin Interface

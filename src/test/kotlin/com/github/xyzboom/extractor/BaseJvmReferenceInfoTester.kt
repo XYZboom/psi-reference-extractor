@@ -142,9 +142,9 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
             val target = targetElementMap[name] ?: fail("no target element $name found")
             checkReference(source, target, name, targetStartMap[name]!!, targetEndMap[name]!!)
 
-            val expectedInfo =
-                engine.eval("createReferenceInfo(${result.split(" ").filter(String::isNotEmpty).joinToString()})")
             val actualInfo = source.reference?.referenceInfos?.first()
+            val expectedInfo =
+                engine.eval("ReferenceInfo(${result.split(" ").filter(String::isNotEmpty).joinToString()})")
             if (
                 expectedInfo
                 != actualInfo
@@ -284,16 +284,6 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
             engine.eval("import com.github.xyzboom.extractor.ReferenceInfo")
             engine.eval("import com.github.xyzboom.extractor.types.*")
             engine.eval("import com.intellij.lang.Language")
-            engine.eval(
-                """
-                |fun createReferenceInfo(
-                |   sourceLanguage: Language, sourceType: IReferenceSourceType,
-                |   targetLanguage: Language?, targetType: IReferenceTargetType?
-                |): ReferenceInfo {
-                |   return ReferenceInfo(sourceLanguage, targetLanguage, sourceType, targetType)
-                |}
-            """.trimMargin()
-            )
         }
 
     }

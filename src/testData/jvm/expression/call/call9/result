@@ -1,2 +1,2 @@
-func: kotlin Call kotlin Method
-receiverFunc: kotlin Call kotlin Method
+func: kotlin Expression Call kotlin Method
+receiverFunc: kotlin Expression Call kotlin Method

@@ -192,6 +192,20 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     
     
         }
+        
+        @Nested
+        inner class OperatorOverloadTest {
+            @Test
+            fun test_operatorOverload0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\operatorOverload\operatorOverload0"""))
+                doValidate(
+                    """src\testData\jvm\expression\operatorOverload\operatorOverload0\result""",
+                    null
+                )
+            }
+    
+    
+        }
     
     }
         
@@ -262,6 +276,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
             initCompilerEnv(Path.of("""src\testData\jvm\property\javaFieldAsProperty"""))
             doValidate(
                 """src\testData\jvm\property\javaFieldAsProperty\result""",
+                null
+            )
+        }
+    
+        @Test
+        fun test_kotlinProperty() {
+            initCompilerEnv(Path.of("""src\testData\jvm\property\kotlinProperty"""))
+            doValidate(
+                """src\testData\jvm\property\kotlinProperty\result""",
                 null
             )
         }

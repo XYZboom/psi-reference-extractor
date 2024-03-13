@@ -1,3 +1,3 @@
-ParentImport0: kotlin Import kotlin Class
-Interface0Import0: kotlin Import kotlin Interface
-Interface1Import0: kotlin Import kotlin Interface
+ParentImport0: kotlin File Import kotlin Class
+Interface0Import0: kotlin File Import kotlin Interface
+Interface1Import0: kotlin File Import kotlin Interface

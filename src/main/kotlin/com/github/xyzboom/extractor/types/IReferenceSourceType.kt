@@ -1,3 +1,4 @@
 package com.github.xyzboom.extractor.types
 
-sealed interface IReferenceSourceType : IReferenceType
+sealed interface IReferenceSourceType
+

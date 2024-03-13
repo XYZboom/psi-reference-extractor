@@ -71,8 +71,8 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
         this is PsiReferenceExpression -> getReferenceInfos(resolvedTargets)
         element.parent is PsiNewExpression -> resolvedTargets.map { resolvedTarget ->
             ReferenceInfo(
-                JavaLanguage.INSTANCE, resolvedTarget.language,
-                Create, resolvedTarget.targetType
+                JavaLanguage.INSTANCE, Expression, Create,
+                resolvedTarget.language, resolvedTarget.targetType
             )
         }
 
@@ -84,14 +84,14 @@ private fun PsiReferenceExpression.getReferenceInfos(resolvedTargets: List<PsiEl
         if (resolvedTargets.isNotEmpty()) {
             resolvedTargets.map { resolvedTarget ->
                 if (resolvedTarget.language === JavaLanguage.INSTANCE) {
-                    ReferenceInfo(JavaLanguage.INSTANCE, JavaLanguage.INSTANCE, Call, Method)
+                    ReferenceInfo(JavaLanguage.INSTANCE, Expression, Call, JavaLanguage.INSTANCE, Method)
                 } else if (resolvedTarget.language === KotlinLanguage.INSTANCE) {
                     val targetType = if (resolvedTarget is KtProperty) Property else Method
-                    ReferenceInfo(JavaLanguage.INSTANCE, KotlinLanguage.INSTANCE, Call, targetType)
+                    ReferenceInfo(JavaLanguage.INSTANCE, Expression, Call, KotlinLanguage.INSTANCE, targetType)
                 } else UNKNOWN
             }
         } else {
-            listOf(ReferenceInfo(JavaLanguage.INSTANCE, null, Call, null))
+            listOf(ReferenceInfo(JavaLanguage.INSTANCE, Expression, Call, null, null))
         }
     } else listOf(UNKNOWN)
 
@@ -104,7 +104,7 @@ private fun KtReference.getReferenceInfos(resolvedTargets: List<PsiElement>): Li
         is KtConstructorDelegationReference -> {
             resolvedTargets.map { resolvedTarget ->
                 require(resolvedTarget.targetType == Constructor)
-                ReferenceInfo(KotlinLanguage.INSTANCE, resolvedTarget.language, Call, Constructor)
+                ReferenceInfo(KotlinLanguage.INSTANCE, Class, Call, resolvedTarget.language, Constructor)
             }
         }
 
@@ -112,14 +112,14 @@ private fun KtReference.getReferenceInfos(resolvedTargets: List<PsiElement>): Li
         is KtForLoopInReference, is KtInvokeFunctionReference -> {
             resolvedTargets.map { resolvedTarget ->
                 require(resolvedTarget.targetType == Method)
-                ReferenceInfo(KotlinLanguage.INSTANCE, resolvedTarget.language, Call, Method)
+                ReferenceInfo(KotlinLanguage.INSTANCE, Expression, Call, resolvedTarget.language, Method)
             }
         }
 
         is KtPropertyDelegationMethodsReference -> {
             resolvedTargets.map { resolvedTarget ->
                 require(resolvedTarget.targetType == Method)
-                ReferenceInfo(KotlinLanguage.INSTANCE, resolvedTarget.language, PropertyDelegate, Method)
+                ReferenceInfo(KotlinLanguage.INSTANCE, Property, PropertyDelegate, resolvedTarget.language, Method)
             }
         }
 
@@ -133,7 +133,7 @@ private fun getKtArrayAccessReferenceInfo(resolvedTargets: List<PsiElement>): Li
         val targetType = resolvedTarget.targetType
         when (targetType) {
             // kotlin array access operator reload
-            Method -> ReferenceInfo(KotlinLanguage.INSTANCE, resolvedTarget.language, Call, Method)
+            Method -> ReferenceInfo(KotlinLanguage.INSTANCE, Expression, Call, resolvedTarget.language, Method)
             else -> UNKNOWN
         }
     }
@@ -143,9 +143,9 @@ private fun getSyntheticPropertyAccessorReferenceInfo(resolvedTargets: List<PsiE
     return resolvedTargets.map { resolvedTarget ->
         val targetLanguage = resolvedTarget.language
         return@map if (targetLanguage === JavaLanguage.INSTANCE) {
-            ReferenceInfo(KotlinLanguage.INSTANCE, JavaLanguage.INSTANCE, Access, Method)
+            ReferenceInfo(KotlinLanguage.INSTANCE, Expression, Access, JavaLanguage.INSTANCE, Method)
         } else if (targetLanguage === KotlinLanguage.INSTANCE) {
-            ReferenceInfo(KotlinLanguage.INSTANCE, KotlinLanguage.INSTANCE, Access, Property)
+            ReferenceInfo(KotlinLanguage.INSTANCE, Expression, Access, KotlinLanguage.INSTANCE, Property)
         } else UNKNOWN
     }
 }
@@ -154,22 +154,33 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
     return resolvedTargets.map { resolvedTarget ->
         val targetLanguage = resolvedTarget.language
         val targetType = resolvedTarget.targetType
-        return@map if (element.parent is KtCallExpression) {
+        return@map if (element is KtOperationReferenceExpression) {
+            ReferenceInfo(KotlinLanguage.INSTANCE, Operator, Call, targetLanguage, targetType)
+        } else if (element.parent is KtCallExpression) {
             if (resolvedTarget is KtConstructor<*> || targetType == Class || targetType == Constructor) {
-                ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Create, targetType)
+                ReferenceInfo(KotlinLanguage.INSTANCE, Expression, Create, targetLanguage, targetType)
             } else {
-                ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Call, targetType)
+                ReferenceInfo(KotlinLanguage.INSTANCE, Expression, Call, targetLanguage, targetType)
             }
         } else if (element.getParentOfType<KtImportList>(false) != null) {
-            ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Import, targetType)
+            ReferenceInfo(KotlinLanguage.INSTANCE, File, Import, targetLanguage, targetType)
         } else if (element.getParentOfType<KtSuperTypeEntry>(false) != null) {
-            ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Implement, targetType)
+            ReferenceInfo(KotlinLanguage.INSTANCE, Class, Implement, targetLanguage, targetType)
         } else if (element.getParentOfType<KtSuperTypeCallEntry>(false) != null) {
-            ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Extend, targetType)
+            ReferenceInfo(KotlinLanguage.INSTANCE, Class, Extend, targetLanguage, targetType)
         } else if (element.getParentOfType<KtAnnotationEntry>(false) != null) {
-            ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Create, targetType)
+            ReferenceInfo(KotlinLanguage.INSTANCE, Class, Create, targetLanguage, targetType)
         } else {
-            ReferenceInfo(KotlinLanguage.INSTANCE, targetLanguage, Access, targetType)
+            val property = element.getParentOfType<KtProperty>(false)
+            if (property != null) {
+                if (property.isLocal) {
+                    ReferenceInfo(KotlinLanguage.INSTANCE, Expression, LocalVariableTyped, targetLanguage, targetType)
+                } else {
+                    ReferenceInfo(KotlinLanguage.INSTANCE, Property, PropertyTyped, targetLanguage, targetType)
+                }
+            } else {
+                ReferenceInfo(KotlinLanguage.INSTANCE, Expression, Access, targetLanguage, targetType)
+            }
         }
     }
 }
