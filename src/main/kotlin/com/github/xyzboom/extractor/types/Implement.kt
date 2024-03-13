@@ -1,3 +1,3 @@
 package com.github.xyzboom.extractor.types
 
-data object Implement : IReferenceSourceType
+data object Implement : IReferenceType

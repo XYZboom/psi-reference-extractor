@@ -9,6 +9,7 @@ List of reference types from the perspective of the source element.
 - [Create](#Create)
 - [Extend](#Extend)
 - [Implement](#Implement)
+- [Property Delegate](#Property-Delegate)
 
 ## Import
 
@@ -159,11 +160,13 @@ package target
 // reference above targets here and has the target type "method"
 ```
 
-
-
 ## Create
 
 Reference whose source located at an expression that create an object.
+
+Reference target type here maybe **Class** or **Constructor**.
+
+If target has no explicit constructor, target type here is **Class**, otherwise **Constructor**
 
 ### Code Samples
 
@@ -187,6 +190,33 @@ fun func() {
 package target
   class Target {}
 //^^^^^^^^^^^^^^^
+//  reference above targets here and has the target type "class"
+```
+
+#### Kotlin create Kotlin constructor
+
+The thing which is created **NOT A CONSTRUCTOR** but an object.
+
+The target type is constructor because source create expression uses target constructor to create object.
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+fun func() {
+    val target = Target(1)
+//               ^^^^^^^^^
+//  reference here has the source type "create"
+//               ^^^^^^
+//  In PSI, PsiReference is always bind to element here.
+}
+```
+
+```kotlin
+// Target.kt
+package target
+  class Target(val x: Int) {}
+//            ^^^^^^^^^^^^
 //  reference above targets here and has the target type "class"
 ```
 
@@ -241,3 +271,35 @@ package target
 //^^^^^^^^^^^^^^^^^
 //  reference above targets here and has the target type "interface"
 ```
+
+## Property Delegate
+
+Reference whose source is a property with delegation.
+
+### Code Samples
+
+#### Kotlin property delegate (by) Kotlin method
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+class Source {
+    val myProperty by Target()
+//                 ^^
+//  reference here has the source type "property delegate"
+}
+```
+
+```kotlin
+// Target.kt
+package target
+import kotlin.reflect.KProperty
+
+class Target {
+    operator fun getValue(source: Source, property: KProperty<*>) = property.name
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//  reference above targets here and has the target type "method"
+}
+```
+

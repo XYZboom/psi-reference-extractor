@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ExportableFileTemplateSettings">
+    <default_templates>
+      <template name="Kotlin Test Source Class.kt" file-name="Source.kt" reformat="true" live-template-enabled="false" />
+      <template name="Kotlin Test Source File.kt" file-name="Source.kt" reformat="true" live-template-enabled="false" />
+      <template name="Kotlin Test Target Class.kt" file-name="Target.kt" reformat="true" live-template-enabled="false" />
+      <template name="Kotlin Test Target File.kt" file-name="Source.kt" reformat="true" live-template-enabled="false" />
+    </default_templates>
+  </component>
+</project>

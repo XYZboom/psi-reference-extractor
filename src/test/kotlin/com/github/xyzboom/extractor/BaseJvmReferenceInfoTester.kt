@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
 import org.jetbrains.kotlin.psi.psiUtil.nextLeaf
-import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.fail
 import org.junit.jupiter.api.BeforeEach
@@ -25,6 +24,8 @@ private typealias CommentInFile = Pair<PsiComment, PsiFile>
 
 open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
 
+    private val sourceElementMapScriptsName: String = "source"
+    private val targetElementMapScriptsName: String = "target"
     private val sourcePrefix = "/*<source"
     private val targetPrefix = "/*<target"
     private val startSuffix = ">*/"
@@ -47,13 +48,6 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
         targetEndMap.clear()
         sourceElementMap.clear()
         targetElementMap.clear()
-    }
-
-    private fun PsiElement.posStr(): String {
-        val document = psiDocumentManager.getDocument(containingFile)!!
-        val startLine = document.getLineNumber(this.startOffset)
-        val startCol = this.startOffset - document.getLineStartOffset(startLine)
-        return "file:///${containingFile.virtualFile.path}:${startLine + 1}:${startCol + 1}"
     }
 
     private fun visitLabeledComment(file: PsiFile, comment: PsiComment) {
@@ -122,11 +116,20 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
     ) = ((firstChild === start || prevLeaf() === start)
             && (lastChild === end || nextLeaf() === end))
 
-    protected fun doValidate(scriptPath: String) {
+    protected fun doValidate(scriptPath: String, extraScriptPath: String? = null) {
         preparePsiElements()
         val resultText = File(scriptPath).readText()
         val lines = resultText.lines()
         if (resultText.isEmpty() || lines.all(String::isEmpty)) fail("test result file is empty!")
+        if (extraScriptPath != null) {
+            val bindings = engine.createBindings()
+            bindings[defaultElementName] = defaultElementName
+            bindings.putAll(sourceElementMap.keys.associateWith { it })
+            bindings[sourceElementMapScriptsName] = PsiMapWrapper(sourceElementMap)
+            bindings[targetElementMapScriptsName] = PsiMapWrapper(targetElementMap)
+            engine.eval("import com.github.xyzboom.extractor.PsiMapWrapper")
+            engine.eval(File(extraScriptPath).readText(), bindings)
+        }
         for (line in lines) {
             if (line.isEmpty()) {
                 continue
@@ -139,9 +142,9 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
             val target = targetElementMap[name] ?: fail("no target element $name found")
             checkReference(source, target, name, targetStartMap[name]!!, targetEndMap[name]!!)
 
+            val actualInfo = source.reference?.referenceInfos?.first()
             val expectedInfo =
-                engine.eval("createReferenceInfo(${result.split(" ").filter(String::isNotEmpty).joinToString()})")
-            val actualInfo = source.reference?.referenceInfo
+                engine.eval("ReferenceInfo(${result.split(" ").filter(String::isNotEmpty).joinToString()})")
             if (
                 expectedInfo
                 != actualInfo
@@ -228,9 +231,10 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
             val targetElement = start.second.findElementAt(start.first.endOffset)
                 ?.parentRangeIn(start.first, end.first)
                 ?: fail("Could not found element between ${start.first.posStr()} and ${end.first.posStr()}.")
-            val sourceElement = sourceElementMap[key]
+            sourceElementMap[key]
                 ?: fail("no source named: $key found but target found between ${start.first.posStr()} and ${end.first.posStr()}.")
-            checkReference(sourceElement, targetElement, key, start, end)
+            // reference check must do after extra scripts done.
+            // so there is no reference check
             targetElementMap[key] = targetElement
         }
     }
@@ -242,7 +246,10 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
         start: CommentInFile,
         end: CommentInFile
     ) {
-        val resolved = sourceElement.references.mapNotNull { it.resolve() }
+        val resolved = sourceElement.references.flatMap {
+            if (it is PsiPolyVariantReference) it.multiResolve(false).map { it1 -> it1.element }
+            else listOf(it.resolve())
+        }.filterNotNull()
         if (resolved.none { it.isEquivalentTo(targetElement) }) {
             val failMessage = "resolved reference must be target element!" +
                     " fail on source between ${sourceStartMap[key]!!.first.posStr()} and ${sourceEndMap[key]!!.first.posStr()}, " +
@@ -267,7 +274,7 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
         @BeforeAll
         fun setUpTestContext() {
             engine = ScriptEngineManager().getEngineByExtension("kts")!!
-            val path = ReferenceInfo::class.java.protectionDomain.codeSource.location.path
+            val path = ClassLoader.getSystemClassLoader().resources("").map { it.path }.toList().joinToString(",")
             engine.eval("System.setProperty(\"kotlin.script.classpath\", \"$path\")")
             val bindings = engine.createBindings()
             bindings["kotlin"] = KotlinLanguage.INSTANCE
@@ -277,16 +284,6 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
             engine.eval("import com.github.xyzboom.extractor.ReferenceInfo")
             engine.eval("import com.github.xyzboom.extractor.types.*")
             engine.eval("import com.intellij.lang.Language")
-            engine.eval(
-                """
-                |fun createReferenceInfo(
-                |   sourceLanguage: Language, sourceType: IReferenceSourceType,
-                |   targetLanguage: Language?, targetType: IReferenceTargetType?
-                |): ReferenceInfo {
-                |   return ReferenceInfo(sourceLanguage, targetLanguage, sourceType, targetType)
-                |}
-            """.trimMargin()
-            )
         }
 
     }
