@@ -194,6 +194,20 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
         }
         
         @Nested
+        inner class DestructureTest {
+            @Test
+            fun test_destructure0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\destructure\destructure0"""))
+                doValidate(
+                    """src\testData\jvm\expression\destructure\destructure0\result""",
+                    null
+                )
+            }
+    
+    
+        }
+        
+        @Nested
         inner class OperatorOverloadTest {
             @Test
             fun test_operatorOverload0() {
