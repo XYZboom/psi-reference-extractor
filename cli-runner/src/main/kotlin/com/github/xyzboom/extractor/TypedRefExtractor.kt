@@ -1,6 +1,6 @@
 package com.github.xyzboom.extractor
 
-import org.jgrapht.graph.DefaultDirectedGraph
+import org.jgrapht.Graph
 import org.jgrapht.graph.DirectedWeightedMultigraph
 import org.jgrapht.traverse.BreadthFirstIterator
 
@@ -13,7 +13,7 @@ class TypedRefExtractor<V, E>(
 ) {
 
     inner class BreadthFirstIteratorWithEdgeFilter(
-        graph: DefaultDirectedGraph<V, E>,
+        graph: Graph<V, E>,
         startVertices: Iterable<V>
     ) : BreadthFirstIterator<V, E>(graph, startVertices) {
         override fun encounterVertex(vertex: V, edge: E) {
@@ -22,7 +22,7 @@ class TypedRefExtractor<V, E>(
         }
     }
 
-    fun doExtractor(graph: DefaultDirectedGraph<V, E>, startVertices: Iterable<V>): DirectedWeightedMultigraph<V, E> {
+    fun doExtractor(graph: DirectedWeightedMultigraph<V, E>, startVertices: Iterable<V>): DirectedWeightedMultigraph<V, E> {
         val result = DirectedWeightedMultigraph<V, E>(edgeClass)
         graph.vertexSet().filter(vertexFilter).forEach(result::addVertex)
         val iterator = BreadthFirstIteratorWithEdgeFilter(graph, startVertices)
