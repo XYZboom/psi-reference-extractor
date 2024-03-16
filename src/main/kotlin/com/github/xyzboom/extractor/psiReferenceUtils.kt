@@ -226,7 +226,8 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
                 targetLanguage,
                 targetType
             )
-        } else if (element.getParentOfType<KtFunction>(false) != null) {
+        } else if (element.getParentOfType<KtBlockExpression>(false) == null
+            && element.getParentOfType<KtFunction>(false) != null) {
             ReferenceInfo(
                 KotlinLanguage.INSTANCE,
                 element.getParentOfType<KtFunction>(false)!!.sourceType,
