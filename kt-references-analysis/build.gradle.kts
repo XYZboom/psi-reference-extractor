@@ -1,6 +1,9 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     `java-library`
     `maven-publish`
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "com.github.xyzboom"
@@ -11,7 +14,7 @@ repositories {
 }
 
 tasks.register<Jar>("sourcesJar") {
-    from(sourceSets["main"].allSource)
+    from(subprojects.map { File(it.projectDir, "src/main/kotlin") })
     archiveClassifier.set("sources")
 }
 fun MavenPublication.configurePublication() {
@@ -32,7 +35,7 @@ publishing {
         create<MavenPublication>("jar") {
             from(components["java"])
             artifacts {
-                archives(tasks["jar"])
+                archives(tasks.named<ShadowJar>("shadowJar"))
                 archives(tasks["sourcesJar"]) {
                     classifier = "sources"
                 }
@@ -61,5 +64,4 @@ dependencies {
     api(project(":kt-references-analysis:analysis-internal-utils"))
     api(project(":kt-references-analysis:kt-references-fe10"))
     api(project(":kt-references-analysis:project-structure"))
-    testImplementation("org.jetbrains.kotlin:kotlin-test")
 }
