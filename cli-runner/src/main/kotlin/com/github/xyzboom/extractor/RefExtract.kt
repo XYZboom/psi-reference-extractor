@@ -21,7 +21,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
     @CommandLine.Parameters(index = "0", description = ["input directory"])
     lateinit var input: File
 
-    @CommandLine.Option(names = ["-o", "--output"], description = ["output dot file prefix"], defaultValue = ".")
+    @CommandLine.Option(names = ["-o", "--output"], description = ["output file prefix"], defaultValue = ".")
     lateinit var output: File
 
     @CommandLine.Option(names = ["-f", "--format"], split = ",", converter = [ExporterConverter::class], defaultValue = "json")

@@ -14,6 +14,7 @@ List of reference types.
 - [Property Typed](#Property-Typed)
 - [Local Variable Typed](#Local-Variable-Typed)
 - [Return](#Return)
+- [Extension](#Extension)
 
 ## Import
 
@@ -466,6 +467,51 @@ import target.Target
 ```kotlin
 package target
 
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+## Extension
+
+Reference whose source is a extension function or extension property of 
+ whose target.
+
+### Code Samples
+
+#### kotlin method extension kotlin class
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+fun Target.func() {}
+//  ^^^^^^
+// reference located here has the type "extension"
+```
+
+```kotlin
+// Target.kt
+package target
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+#### kotlin property extension kotlin class
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+val Target.myProperty : String get() = "123"
+//  ^^^^^^
+// reference located here has the type "extension"
+```
+
+```kotlin
+// Target.kt
+package target
    class Target
 // ^^^^^^^^^^^^
 // reference above targets here and has the target type "class"
