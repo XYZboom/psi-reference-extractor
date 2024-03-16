@@ -1,1 +1,1 @@
-### This module is copied from [Kotlin](https://github.com/JetBrains/kotlin) to provide kotlin reference parsing
+### This module is copied from [Kotlin](https://github.com/JetBrains/kotlin) and modified a little to provide kotlin reference parsing

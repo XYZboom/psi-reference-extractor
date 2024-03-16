@@ -1,6 +1,6 @@
-# Reference Source Types
+# Reference Types
 
-List of reference types from the perspective of the source element.
+List of reference types.
 
 - [Import](#Import)
 - [Call](#Call)
@@ -24,7 +24,7 @@ Reference whose source located at import list.
 package source;
 import target.Target;
 //            ^^^^^^
-// reference here has the source type "import"
+// reference here has the type "import"
 ```
 
 ```java
@@ -52,7 +52,7 @@ public class Source {
         Target target = new Target();
         target.func();
 //      ^^^^^^^^^^^^^
-//      reference here has the source type "call"
+//      reference here has the type "call"
 //      ^^^^^^^^^^^
 //      In PSI, PsiRefence is always bind to element here.
     }
@@ -81,7 +81,7 @@ public class Source {
         Target target = new Target();
         target.getString();
 //      ^^^^^^^^^^^^^^^^^^
-//      reference here has the source type "call"
+//      reference here has the type "call"
 //      ^^^^^^^^^^^^^^^^
 //      In PSI, PsiRefence is always bind to element here.
     }
@@ -117,7 +117,7 @@ fun func() {
     val target = Target()
     target.string
 //         ^^^^^^
-//  reference here has the source type "access"
+//  reference here has the type "access"
 }
 ```
 
@@ -146,7 +146,7 @@ import target.targetFunc
 fun func(input: List<String>) {
     input.forEach(::targetFunc)
 //                ^^^^^^^^^^^^
-//  reference here has the source type "access reference"
+//  reference here has the type "access reference"
 //                  ^^^^^^^^^^
 //  In PSI, PsiRefence is always bind to element here.
 }
@@ -179,7 +179,7 @@ import target.Target
 fun func() {
     val target = Target()
 //               ^^^^^^^^
-//  reference here has the source type "create"
+//  reference here has the type "create"
 //               ^^^^^^
 //  In PSI, PsiReference is always bind to element here.
 }
@@ -206,7 +206,7 @@ import target.Target
 fun func() {
     val target = Target(1)
 //               ^^^^^^^^^
-//  reference here has the source type "create"
+//  reference here has the type "create"
 //               ^^^^^^
 //  In PSI, PsiReference is always bind to element here.
 }
@@ -234,7 +234,7 @@ package source
 import target.Target
 class Source: Target() {
 //            ^^^^^^
-//  reference here has the source type "extend"
+//  reference here has the type "extend"
 }
 ```
 
@@ -260,7 +260,7 @@ package source
 import target.Target
 class Source: ITarget {
 //            ^^^^^^^
-//  reference here has the source type "implement"
+//  reference here has the type "implement"
 }
 ```
 
@@ -287,7 +287,7 @@ import target.Target
 class Source {
     val myProperty by Target()
 //                 ^^
-//  reference here has the source type "property delegate"
+//  reference here has the type "property delegate"
 }
 ```
 

@@ -81,6 +81,7 @@ dependencies {
     implementation(project(":intellij-core"))
     implementation("org.jetbrains:annotations:24.0.0")
     compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
+    implementation(project(":kt-references-analysis:extra-references"))
     testImplementation(project(":kotlin-compiler-context-utils"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")

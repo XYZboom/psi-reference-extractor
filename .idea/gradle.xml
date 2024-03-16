@@ -17,6 +17,7 @@
             <option value="$PROJECT_DIR$/kt-references-analysis/analysis-api-fe10" />
             <option value="$PROJECT_DIR$/kt-references-analysis/analysis-api-impl-base" />
             <option value="$PROJECT_DIR$/kt-references-analysis/analysis-internal-utils" />
+            <option value="$PROJECT_DIR$/kt-references-analysis/extra-references" />
             <option value="$PROJECT_DIR$/kt-references-analysis/kt-references-fe10" />
             <option value="$PROJECT_DIR$/kt-references-analysis/project-structure" />
             <option value="$PROJECT_DIR$/test-framework" />

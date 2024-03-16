@@ -6,7 +6,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiRecursiveElementVisitor
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.kotlin.idea.references.KtDefaultAnnotationArgumentReference
-import org.jetbrains.kotlin.psi.KtProperty
 import org.jgrapht.graph.DirectedWeightedMultigraph
 import org.jgrapht.nio.DefaultAttribute
 import picocli.CommandLine
@@ -22,7 +21,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
     @CommandLine.Parameters(index = "0", description = ["input directory"])
     lateinit var input: File
 
-    @CommandLine.Parameters(index = "1", description = ["output dot file prefix"])
+    @CommandLine.Option(names = ["-o", "--output"], description = ["output dot file prefix"], defaultValue = ".")
     lateinit var output: File
 
     @CommandLine.Option(names = ["-f", "--format"], split = ",", converter = [ExporterConverter::class], defaultValue = "json")
@@ -42,13 +41,8 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
     }
 
     private inner class ReferenceRecorderVisitor : PsiRecursiveElementVisitor() {
-        fun visitKtProperty(source: KtProperty) {
-        }
 
         override fun visitElement(element: PsiElement) {
-            if (element is KtProperty) {
-                visitKtProperty(element)
-            }
             elementGraph.addVertex(element)
             val reference = element.reference ?: kotlin.run {
                 super.visitElement(element)
