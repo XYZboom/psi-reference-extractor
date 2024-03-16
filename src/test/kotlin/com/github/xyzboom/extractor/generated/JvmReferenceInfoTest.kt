@@ -224,6 +224,25 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     }
         
     @Nested
+    inner class ExtensionTest {
+    
+        @Nested
+        inner class FunctionTest {
+            @Test
+            fun test_function0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\extension\function\function0"""))
+                doValidate(
+                    """src\testData\jvm\extension\function\function0\result""",
+                    null
+                )
+            }
+    
+    
+        }
+    
+    }
+        
+    @Nested
     inner class ImportTest {
         @Test
         fun test_import0() {
@@ -284,6 +303,38 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     }
         
     @Nested
+    inner class ParameterTest {
+        @Test
+        fun test_constructorParameter0() {
+            initCompilerEnv(Path.of("""src\testData\jvm\parameter\constructorParameter0"""))
+            doValidate(
+                """src\testData\jvm\parameter\constructorParameter0\result""",
+                null
+            )
+        }
+    
+        @Test
+        fun test_constructorParameter1() {
+            initCompilerEnv(Path.of("""src\testData\jvm\parameter\constructorParameter1"""))
+            doValidate(
+                """src\testData\jvm\parameter\constructorParameter1\result""",
+                null
+            )
+        }
+    
+        @Test
+        fun test_methodParameter0() {
+            initCompilerEnv(Path.of("""src\testData\jvm\parameter\methodParameter0"""))
+            doValidate(
+                """src\testData\jvm\parameter\methodParameter0\result""",
+                null
+            )
+        }
+    
+    
+    }
+        
+    @Nested
     inner class PropertyTest {
         @Test
         fun test_javaFieldAsProperty() {
@@ -304,10 +355,42 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
         }
     
         @Test
+        fun test_kotlinProperty1() {
+            initCompilerEnv(Path.of("""src\testData\jvm\property\kotlinProperty1"""))
+            doValidate(
+                """src\testData\jvm\property\kotlinProperty1\result""",
+                null
+            )
+        }
+    
+        @Test
         fun test_propertyDelegate0() {
             initCompilerEnv(Path.of("""src\testData\jvm\property\propertyDelegate0"""))
             doValidate(
                 """src\testData\jvm\property\propertyDelegate0\result""",
+                null
+            )
+        }
+    
+    
+    }
+        
+    @Nested
+    inner class ReturnTest {
+        @Test
+        fun test_methodReturn0() {
+            initCompilerEnv(Path.of("""src\testData\jvm\return\methodReturn0"""))
+            doValidate(
+                """src\testData\jvm\return\methodReturn0\result""",
+                null
+            )
+        }
+    
+        @Test
+        fun test_methodReturn1() {
+            initCompilerEnv(Path.of("""src\testData\jvm\return\methodReturn1"""))
+            doValidate(
+                """src\testData\jvm\return\methodReturn1\result""",
                 null
             )
         }

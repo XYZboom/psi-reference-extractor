@@ -1,6 +1,6 @@
-# Reference Source Types
+# Reference Types
 
-List of reference types from the perspective of the source element.
+List of reference types.
 
 - [Import](#Import)
 - [Call](#Call)
@@ -10,6 +10,11 @@ List of reference types from the perspective of the source element.
 - [Extend](#Extend)
 - [Implement](#Implement)
 - [Property Delegate](#Property-Delegate)
+- [Parameter](#Parameter)
+- [Property Typed](#Property-Typed)
+- [Local Variable Typed](#Local-Variable-Typed)
+- [Return](#Return)
+- [Extension](#Extension)
 
 ## Import
 
@@ -24,7 +29,7 @@ Reference whose source located at import list.
 package source;
 import target.Target;
 //            ^^^^^^
-// reference here has the source type "import"
+// reference here has the type "import"
 ```
 
 ```java
@@ -52,7 +57,7 @@ public class Source {
         Target target = new Target();
         target.func();
 //      ^^^^^^^^^^^^^
-//      reference here has the source type "call"
+//      reference here has the type "call"
 //      ^^^^^^^^^^^
 //      In PSI, PsiRefence is always bind to element here.
     }
@@ -81,7 +86,7 @@ public class Source {
         Target target = new Target();
         target.getString();
 //      ^^^^^^^^^^^^^^^^^^
-//      reference here has the source type "call"
+//      reference here has the type "call"
 //      ^^^^^^^^^^^^^^^^
 //      In PSI, PsiRefence is always bind to element here.
     }
@@ -117,7 +122,7 @@ fun func() {
     val target = Target()
     target.string
 //         ^^^^^^
-//  reference here has the source type "access"
+//  reference here has the type "access"
 }
 ```
 
@@ -146,7 +151,7 @@ import target.targetFunc
 fun func(input: List<String>) {
     input.forEach(::targetFunc)
 //                ^^^^^^^^^^^^
-//  reference here has the source type "access reference"
+//  reference here has the type "access reference"
 //                  ^^^^^^^^^^
 //  In PSI, PsiRefence is always bind to element here.
 }
@@ -179,7 +184,7 @@ import target.Target
 fun func() {
     val target = Target()
 //               ^^^^^^^^
-//  reference here has the source type "create"
+//  reference here has the type "create"
 //               ^^^^^^
 //  In PSI, PsiReference is always bind to element here.
 }
@@ -206,7 +211,7 @@ import target.Target
 fun func() {
     val target = Target(1)
 //               ^^^^^^^^^
-//  reference here has the source type "create"
+//  reference here has the type "create"
 //               ^^^^^^
 //  In PSI, PsiReference is always bind to element here.
 }
@@ -234,7 +239,7 @@ package source
 import target.Target
 class Source: Target() {
 //            ^^^^^^
-//  reference here has the source type "extend"
+//  reference here has the type "extend"
 }
 ```
 
@@ -260,7 +265,7 @@ package source
 import target.Target
 class Source: ITarget {
 //            ^^^^^^^
-//  reference here has the source type "implement"
+//  reference here has the type "implement"
 }
 ```
 
@@ -287,7 +292,7 @@ import target.Target
 class Source {
     val myProperty by Target()
 //                 ^^
-//  reference here has the source type "property delegate"
+//  reference here has the type "property delegate"
 }
 ```
 
@@ -303,3 +308,211 @@ class Target {
 }
 ```
 
+## Parameter
+
+Reference whose source is a parameter.
+
+### Code Samples
+
+#### kotlin method parameter kotlin class
+
+```kotlin
+package source
+
+import target.Target
+
+fun func(param: Target) {
+//              ^^^^^^
+// reference here has the type "parameter"
+}
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+#### kotlin constructor parameter kotlin class
+
+```kotlin
+package source
+
+import target.Target
+
+class Source(param: Target)
+//                  ^^^^^^
+// reference here has the type "parameter"
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+## Property Typed
+
+Reference whose source is property and target is property's type class.
+
+### Code Samples
+
+#### kotlin (property) property typed kotlin class 0
+
+when property's type is specified, the reference in psi is located at
+ the type declaration.
+
+```kotlin
+package source
+
+import target.Target
+
+class Source {
+    val myProperty: Target = Target()
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// reference here has the type "property typed"
+//                  ^^^^^^
+// in psi, reference located here.
+}
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+#### kotlin (property) property typed kotlin class 1
+
+when property's type is **not** specified, the reference will be created
+ by extractor but not official reference analysis.
+
+```kotlin
+package source
+
+import target.Target
+
+class Source {
+    val myProperty = Target()
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^
+// reference here has the type "property typed"
+}
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+## Local Variable Typed
+
+Reference whose source is local variable and target is local variable's type class.
+
+## Return
+
+Reference whose source is a method and whose target is the return type class
+ of this method.
+
+### Code Samples
+
+#### kotlin method return kotlin class 0
+
+when property's type is specified, the reference in psi is located at
+the return type declaration.
+
+```kotlin
+package source
+
+import target.Target
+
+fun func(): Target {
+//          ^^^^^^
+// reference here has the type "return"
+    return Target()
+}
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+#### kotlin method return kotlin class 1
+
+when property's type is **not** specified, the reference will be created by 
+ extractor but not official reference analysis.
+
+```kotlin
+package source
+
+import target.Target
+
+   fun func() = Target()
+// ^^^^^^^^^^^^^^^^^^^^^
+// reference here has the type "return"
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+## Extension
+
+Reference whose source is a extension function or extension property of 
+ whose target.
+
+### Code Samples
+
+#### kotlin method extension kotlin class
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+fun Target.func() {}
+//  ^^^^^^
+// reference located here has the type "extension"
+```
+
+```kotlin
+// Target.kt
+package target
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+#### kotlin property extension kotlin class
+
+```kotlin
+// Source.kt
+package source
+import target.Target
+val Target.myProperty : String get() = "123"
+//  ^^^^^^
+// reference located here has the type "extension"
+```
+
+```kotlin
+// Target.kt
+package target
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```

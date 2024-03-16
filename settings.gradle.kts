@@ -10,6 +10,7 @@ include(
     ":kt-references-analysis:analysis-internal-utils",
     ":kt-references-analysis:kt-references-fe10",
     ":kt-references-analysis:project-structure",
+    "kt-references-analysis:extra-references",
     ":intellij-core",
 )
 include("test-framework")
