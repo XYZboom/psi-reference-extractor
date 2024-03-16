@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    `maven-publish`
 }
 
 val intellijVersion = "232.10300.40"
@@ -18,7 +19,41 @@ val intellijVersion = "232.10300.40"
 //    "intellij.java.psi",
 //    "intellij.java.psi.impl",
 //]
+fun MavenPublication.configurePublication() {
+    groupId = "com.github.xyzboom"
+    artifactId = "intellij-core-for-psi-reference-extractor"
+    version = "232.10300.40"
+    pom {
+        // 设置项目的元数据信息
+        name.set("intellij-core-for-psi-reference-extractor")
+        description.set("Intellij core module for com.github.xyzboom:psi-reference-extractor")
+        url.set("https://github.com/XYZboom/psi-reference-extractor")
+    }
+}
 
+publishing {
+    publications {
+        // 配置发布的库
+        create<MavenPublication>("jar") {
+            from(components["java"])
+            artifacts {
+                archives(tasks["jar"])
+            }
+            configurePublication()
+        }
+    }
+
+    repositories {
+        // 配置发布到的 Maven 仓库
+        maven {
+            url = uri("https://maven.pkg.github.com/xyzboom/psi-reference-extractor")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
 dependencies {
     api("com.jetbrains.intellij.platform:util-rt:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:util-class-loader:$intellijVersion") { isTransitive = false }
