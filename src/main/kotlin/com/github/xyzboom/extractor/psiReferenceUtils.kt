@@ -213,7 +213,7 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
             ReferenceInfo(KotlinLanguage.INSTANCE, Class, Create, targetLanguage, targetType)
         } else if (element.getParentOfType<KtProperty>(false) != null) {
             if (element.getParentOfType<KtProperty>(false)!!.isLocal) {
-                ReferenceInfo(KotlinLanguage.INSTANCE, Expression, LocalVariableTyped, targetLanguage, targetType)
+                ReferenceInfo(KotlinLanguage.INSTANCE, LocalVariable, LocalVariableTyped, targetLanguage, targetType)
             } else {
                 ReferenceInfo(KotlinLanguage.INSTANCE, Property, PropertyTyped, targetLanguage, targetType)
             }
