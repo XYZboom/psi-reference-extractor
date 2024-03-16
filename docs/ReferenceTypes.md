@@ -10,6 +10,10 @@ List of reference types.
 - [Extend](#Extend)
 - [Implement](#Implement)
 - [Property Delegate](#Property-Delegate)
+- [Parameter](#Parameter)
+- [Property Typed](#Property-Typed)
+- [Local Variable Typed](#Local-Variable-Typed)
+- [Return](#Return)
 
 ## Import
 
@@ -303,3 +307,166 @@ class Target {
 }
 ```
 
+## Parameter
+
+Reference whose source is a parameter.
+
+### Code Samples
+
+#### kotlin method parameter kotlin class
+
+```kotlin
+package source
+
+import target.Target
+
+fun func(param: Target) {
+//              ^^^^^^
+// reference here has the type "parameter"
+}
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+#### kotlin constructor parameter kotlin class
+
+```kotlin
+package source
+
+import target.Target
+
+class Source(param: Target)
+//                  ^^^^^^
+// reference here has the type "parameter"
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+## Property Typed
+
+Reference whose source is property and target is property's type class.
+
+### Code Samples
+
+#### kotlin (property) property typed kotlin class 0
+
+when property's type is specified, the reference in psi is located at
+ the type declaration.
+
+```kotlin
+package source
+
+import target.Target
+
+class Source {
+    val myProperty: Target = Target()
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// reference here has the type "property typed"
+//                  ^^^^^^
+// in psi, reference located here.
+}
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+#### kotlin (property) property typed kotlin class 1
+
+when property's type is **not** specified, the reference will be created
+ by extractor but not official reference analysis.
+
+```kotlin
+package source
+
+import target.Target
+
+class Source {
+    val myProperty = Target()
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^
+// reference here has the type "property typed"
+}
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+## Local Variable Typed
+
+Reference whose source is local variable and target is local variable's type class.
+
+## Return
+
+Reference whose source is a method and whose target is the return type class
+ of this method.
+
+### Code Samples
+
+#### kotlin method return kotlin class 0
+
+when property's type is specified, the reference in psi is located at
+the return type declaration.
+
+```kotlin
+package source
+
+import target.Target
+
+fun func(): Target {
+//          ^^^^^^
+// reference here has the type "return"
+    return Target()
+}
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
+
+#### kotlin method return kotlin class 1
+
+when property's type is **not** specified, the reference will be created by 
+ extractor but not official reference analysis.
+
+```kotlin
+package source
+
+import target.Target
+
+   fun func() = Target()
+// ^^^^^^^^^^^^^^^^^^^^^
+// reference here has the type "return"
+```
+
+```kotlin
+package target
+
+   class Target
+// ^^^^^^^^^^^^
+// reference above targets here and has the target type "class"
+```
