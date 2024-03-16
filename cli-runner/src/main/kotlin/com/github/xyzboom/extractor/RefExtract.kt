@@ -1,5 +1,7 @@
 package com.github.xyzboom.extractor
 
+import com.github.xyzboom.extractor.converter.ExporterConverter
+import com.github.xyzboom.extractor.converter.GranularityConverter
 import com.github.xyzboom.ktcutils.KotlinJvmCompilerContext
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -23,6 +25,9 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
 
     @CommandLine.Option(names = ["-o", "--output"], description = ["output file prefix"], defaultValue = ".")
     lateinit var output: File
+
+    @CommandLine.Option(names = ["-g", "--granularity"], split = ",", converter = [GranularityConverter::class], defaultValue = "file")
+    lateinit var granularity: Array<TypedRefExtractor<PsiElement, GrammarOrRefEdge>>
 
     @CommandLine.Option(names = ["-f", "--format"], split = ",", converter = [ExporterConverter::class], defaultValue = "json")
     lateinit var exporters: Array<ExporterProxy<PsiElement, GrammarOrRefEdge>>
@@ -71,6 +76,14 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
         }
     }
 
+    private fun PsiElement.formatToStr() : String {
+        return when {
+            this is PsiFile -> virtualFile.path
+            dependElements.contains(this) -> "$this (Not in project)"
+            else -> posStr()
+        }
+    }
+
     override fun run() {
         logger.info { "start init compiler env" }
         val initCompilerEnvTime = measureTime {
@@ -93,34 +106,28 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
         logger.info { "analyze references cost: $analyzeReferencesTime" }
         logger.info { "start extract references" }
         val extractTime = measureTime {
-            val collectEdgeFilter: (GrammarOrRefEdge) -> Boolean =
-                { (it.referenceInfo != null) && (it.referenceInfo != ReferenceInfo.UNKNOWN) }
-            val extractor = TypedRefExtractor<PsiElement, GrammarOrRefEdge>(
-                { it is PsiFile }, { it.referenceInfo == null },
-                collectEdgeFilter,
-                GrammarOrRefEdge::class.java
-            )
-            val graph = extractor.doExtractor(elementGraph, allPsiFiles)
-            exporters.forEach { exporter ->
-                exporter.setVertexAttributeProvider {
-                    val labelText = if (it in dependElements) {
-                        "$it (Not in project)"
-                    } else it.toString()
-                    mutableMapOf("label" to DefaultAttribute.createAttribute(labelText))
+            granularity.forEach { extractor ->
+                val graph = extractor.doExtractor(elementGraph, allPsiFiles)
+                exporters.forEach { exporter ->
+                    exporter.setVertexAttributeProvider {
+                        val labelText = if (it in dependElements) {
+                            "${it.formatToStr()} (Not in project)"
+                        } else it.formatToStr()
+                        mutableMapOf("label" to DefaultAttribute.createAttribute(labelText))
+                    }
+                    exporter.setEdgeAttributeProvider {
+                        mutableMapOf("label" to DefaultAttribute.createAttribute(it.referenceInfo.toString()))
+                    }
+                    val outputFile = if (output.isDirectory) {
+                        File(output, "output-${extractor.name}.${exporter.name}")
+                    } else {
+                        File(output.parentFile, "${output.name}-${extractor.name}.${exporter.name}")
+                    }
+                    val writer: Writer = FileWriter(outputFile)
+                    exporter.exportGraph(graph, writer)
+                    writer.flush()
                 }
-                exporter.setEdgeAttributeProvider {
-                    mutableMapOf("label" to DefaultAttribute.createAttribute(it.referenceInfo.toString()))
-                }
-                val outputFile = if (output.isDirectory) {
-                    File(output, "output.${exporter.name}")
-                } else {
-                    File(output.parentFile, "${output.name}.${exporter.name}")
-                }
-                val writer: Writer = FileWriter(outputFile)
-                exporter.exportGraph(graph, writer)
-                writer.flush()
             }
-
         }
         logger.info { "extract references cost: $extractTime" }
     }
