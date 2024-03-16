@@ -22,7 +22,7 @@ val intellijVersion = "232.10300.40"
 fun MavenPublication.configurePublication() {
     groupId = "com.github.xyzboom"
     artifactId = "intellij-core-for-psi-reference-extractor"
-    version = "232.10300.40"
+    version = "1.0.0-SNAPSHOT"
     pom {
         // 设置项目的元数据信息
         name.set("intellij-core-for-psi-reference-extractor")
