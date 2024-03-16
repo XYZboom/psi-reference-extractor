@@ -1,3 +1,3 @@
 package com.github.xyzboom.extractor.types
 
-data object Method : IReferenceTargetType
+data object Method : IReferenceSourceType, IReferenceTargetType

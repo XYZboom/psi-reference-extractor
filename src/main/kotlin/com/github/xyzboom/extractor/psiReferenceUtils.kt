@@ -5,6 +5,8 @@ import com.github.xyzboom.extractor.types.*
 import com.github.xyzboom.extractor.types.Annotation
 import com.github.xyzboom.extractor.types.Call
 import com.github.xyzboom.extractor.types.Class
+import com.github.xyzboom.kotlin.reference.KtFunctionReturnReference
+import com.github.xyzboom.kotlin.reference.KtPropertyTypedReference
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiClass
@@ -126,8 +128,35 @@ private fun KtReference.getReferenceInfos(resolvedTargets: List<PsiElement>): Li
 
         is KtSimpleNameReference -> getReferenceInfos(resolvedTargets)
         is KtDefaultAnnotationArgumentReference -> listOf(UNKNOWN)
+        is KtPropertyTypedReference -> getKtPropertyTypedReferenceInfos(resolvedTargets)
+        is KtFunctionReturnReference -> getKtFunctionReturnReferenceInfos(resolvedTargets)
         else -> throw ExtractorException("Unsupported reference type: ${this::class.java}")
     }
+
+private fun KtReference.getKtFunctionReturnReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
+    val source = this.element
+    val sourceType = source.sourceType
+    val sourceLanguage = source.language
+    return resolvedTargets.map { resolvedTarget ->
+        val targetType = resolvedTarget.targetType
+        ReferenceInfo(sourceLanguage, sourceType, Return, resolvedTarget.language, targetType)
+    }
+}
+
+private fun KtReference.getKtPropertyTypedReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
+    val source = this.element
+    val sourceType = source.sourceType
+    val sourceLanguage = source.language
+    return resolvedTargets.map { resolvedTarget ->
+        val targetType = resolvedTarget.targetType
+        val referenceType = when {
+            sourceType == Property && targetType == Class -> PropertyTyped
+            sourceType == LocalVariable && targetType == Class -> LocalVariableTyped
+            else -> Unknown
+        }
+        ReferenceInfo(sourceLanguage, sourceType, referenceType, resolvedTarget.language, targetType)
+    }
+}
 
 private fun getDestructuringDeclarationReferenceInfos(resolvedTargets: List<PsiElement>) =
     resolvedTargets.map { resolvedTarget ->
@@ -182,20 +211,47 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
             ReferenceInfo(KotlinLanguage.INSTANCE, Class, Extend, targetLanguage, targetType)
         } else if (element.getParentOfType<KtAnnotationEntry>(false) != null) {
             ReferenceInfo(KotlinLanguage.INSTANCE, Class, Create, targetLanguage, targetType)
-        } else {
-            val property = element.getParentOfType<KtProperty>(false)
-            if (property != null) {
-                if (property.isLocal) {
-                    ReferenceInfo(KotlinLanguage.INSTANCE, Expression, LocalVariableTyped, targetLanguage, targetType)
-                } else {
-                    ReferenceInfo(KotlinLanguage.INSTANCE, Property, PropertyTyped, targetLanguage, targetType)
-                }
+        } else if (element.getParentOfType<KtProperty>(false) != null) {
+            if (element.getParentOfType<KtProperty>(false)!!.isLocal) {
+                ReferenceInfo(KotlinLanguage.INSTANCE, Expression, LocalVariableTyped, targetLanguage, targetType)
             } else {
-                ReferenceInfo(KotlinLanguage.INSTANCE, Expression, Access, targetLanguage, targetType)
+                ReferenceInfo(KotlinLanguage.INSTANCE, Property, PropertyTyped, targetLanguage, targetType)
             }
+        } else if (element.getParentOfType<KtParameterList>(false) != null) {
+            val ktParameterList = element.getParentOfType<KtParameterList>(false)!!
+            ReferenceInfo(
+                KotlinLanguage.INSTANCE,
+                ktParameterList.parent.sourceType,
+                Parameter,
+                targetLanguage,
+                targetType
+            )
+        } else if (element.getParentOfType<KtFunction>(false) != null) {
+            ReferenceInfo(
+                KotlinLanguage.INSTANCE,
+                element.getParentOfType<KtFunction>(false)!!.sourceType,
+                Return,
+                targetLanguage,
+                targetType
+            )
+        } else {
+            ReferenceInfo(KotlinLanguage.INSTANCE, Expression, Access, targetLanguage, targetType)
         }
     }
 }
+
+val PsiElement.sourceType: IReferenceSourceType
+    get() = when (this) {
+        is KtConstructor<*> -> Constructor
+        is KtProperty ->
+            if (isLocal) {
+                LocalVariable
+            } else Property
+
+        is KtFunction -> Method
+
+        else -> Unknown
+    }
 
 val PsiElement.targetType: IReferenceTargetType
     get() = when (this) {
@@ -218,7 +274,11 @@ val PsiElement.targetType: IReferenceTargetType
                 else -> Class
             }
 
-        is KtProperty -> Property
+        is KtProperty ->
+            if (isLocal) {
+                LocalVariable
+            } else Property
+
         is KtFunction -> Method
         is PsiMethod ->
             if (isConstructor) {
@@ -231,5 +291,6 @@ val PsiElement.targetType: IReferenceTargetType
             if (isPropertyParameter()) {
                 Property
             } else Unknown
+
         else -> Unknown
     }

@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfTypeAndBranch
 import org.jetbrains.kotlin.psi.psiUtil.parents
-import org.jetbrains.kotlin.references.fe10.*
 import org.jetbrains.kotlin.resolve.references.ReferenceAccess
 
 class KtFe10KotlinReferenceProviderContributor : KotlinReferenceProviderContributor {
@@ -42,8 +41,10 @@ class KtFe10KotlinReferenceProviderContributor : KotlinReferenceProviderContribu
                 when (nameReferenceExpression.readWriteAccess(useResolveForReadWrite = false)) {
                     ReferenceAccess.READ ->
                         arrayOf(Fe10SyntheticPropertyAccessorReference(nameReferenceExpression, getter = true))
+
                     ReferenceAccess.WRITE ->
                         arrayOf(Fe10SyntheticPropertyAccessorReference(nameReferenceExpression, getter = false))
+
                     ReferenceAccess.READ_WRITE ->
                         arrayOf(
                             Fe10SyntheticPropertyAccessorReference(nameReferenceExpression, getter = true),
@@ -54,10 +55,21 @@ class KtFe10KotlinReferenceProviderContributor : KotlinReferenceProviderContribu
 
             registerProvider<KtValueArgument> provider@{ element: KtValueArgument ->
                 if (element.isNamed()) return@provider null
-                val annotationEntry = element.getParentOfTypeAndBranch<KtAnnotationEntry> { valueArgumentList } ?: return@provider null
+                val annotationEntry =
+                    element.getParentOfTypeAndBranch<KtAnnotationEntry> { valueArgumentList } ?: return@provider null
                 if (annotationEntry.valueArguments.size != 1) return@provider null
 
                 KtDefaultAnnotationArgumentReference(element)
+            }
+
+            registerProvider<KtProperty> provider@{ property ->
+                if (property.nameIdentifier == null) return@provider null
+                KtFe10PropertyTypedReference(property)
+            }
+
+            registerProvider<KtFunction> provider@{ function ->
+                if (function.hasDeclaredReturnType()) return@provider null
+                KtFe10FunctionReturnReference(function)
             }
         }
     }

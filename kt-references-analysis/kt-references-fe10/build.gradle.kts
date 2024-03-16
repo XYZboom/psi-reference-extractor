@@ -6,6 +6,7 @@ plugins {
 }
 
 dependencies{
+    implementation(project(":kt-references-analysis:extra-references"))
     compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
 }
 
