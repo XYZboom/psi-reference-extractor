@@ -5,6 +5,7 @@ import com.github.xyzboom.extractor.types.*
 import com.github.xyzboom.extractor.types.Annotation
 import com.github.xyzboom.extractor.types.Call
 import com.github.xyzboom.extractor.types.Class
+import com.github.xyzboom.extractor.utils.isExtension
 import com.github.xyzboom.kotlin.reference.KtFunctionReturnReference
 import com.github.xyzboom.kotlin.reference.KtPropertyTypedReference
 import com.intellij.lang.java.JavaLanguage
@@ -203,6 +204,14 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
             } else {
                 ReferenceInfo(KotlinLanguage.INSTANCE, Expression, Call, targetLanguage, targetType)
             }
+        } else if (element.isExtension) {
+            ReferenceInfo(
+                KotlinLanguage.INSTANCE,
+                element.parent.parent.parent.sourceType,
+                Extension,
+                targetLanguage,
+                targetType
+            )
         } else if (element.getParentOfType<KtImportList>(false) != null) {
             ReferenceInfo(KotlinLanguage.INSTANCE, File, Import, targetLanguage, targetType)
         } else if (element.getParentOfType<KtSuperTypeEntry>(false) != null) {
@@ -227,7 +236,8 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
                 targetType
             )
         } else if (element.getParentOfType<KtBlockExpression>(false) == null
-            && element.getParentOfType<KtFunction>(false) != null) {
+            && element.getParentOfType<KtFunction>(false) != null
+        ) {
             ReferenceInfo(
                 KotlinLanguage.INSTANCE,
                 element.getParentOfType<KtFunction>(false)!!.sourceType,

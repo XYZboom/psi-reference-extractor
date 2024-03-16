@@ -224,6 +224,25 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     }
         
     @Nested
+    inner class ExtensionTest {
+    
+        @Nested
+        inner class FunctionTest {
+            @Test
+            fun test_function0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\extension\function\function0"""))
+                doValidate(
+                    """src\testData\jvm\extension\function\function0\result""",
+                    null
+                )
+            }
+    
+    
+        }
+    
+    }
+        
+    @Nested
     inner class ImportTest {
         @Test
         fun test_import0() {
