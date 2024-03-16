@@ -15,7 +15,7 @@ fun MavenPublication.configurePublication() {
     groupId = "com.github.xyzboom"
     artifactId = "psi-reference-extractor"
     version = "1.0.0-SNAPSHOT"
-    pom {
+     pom {
         // 设置项目的元数据信息
         name.set("psi-reference-extractor")
         description.set("A useful library for extract psi reference")

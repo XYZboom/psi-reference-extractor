@@ -5,6 +5,7 @@ import org.jgrapht.graph.DirectedWeightedMultigraph
 import org.jgrapht.traverse.BreadthFirstIterator
 
 class TypedRefExtractor<V, E>(
+    val name: String,
     private val vertexFilter: (V) -> Boolean,
     private val traverseEdgeFilter: (E) -> Boolean,
     private val collectEdgeFilter: (E) -> Boolean,
