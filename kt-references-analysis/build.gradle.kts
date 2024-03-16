@@ -1,6 +1,5 @@
 plugins {
-    kotlin("jvm")
-    application
+    `java-library`
     `maven-publish`
 }
 
@@ -10,36 +9,20 @@ version = "1.0.0-SNAPSHOT"
 repositories {
     mavenCentral()
 }
+
 tasks.register<Jar>("sourcesJar") {
     from(sourceSets["main"].allSource)
     archiveClassifier.set("sources")
 }
 fun MavenPublication.configurePublication() {
     groupId = "com.github.xyzboom"
-    artifactId = "psi-reference-extractor-runner"
+    artifactId = "kt-reference-analysis-for-psi-reference-extractor"
     version = "1.0.0-SNAPSHOT"
     pom {
         // 设置项目的元数据信息
-        name.set("psi-reference-extractor-runner")
-        description.set("Command runner for com.github.xyzboom:psi-reference-extractor")
+        name.set("kt-reference-analysis-for-psi-reference-extractor")
+        description.set("kotlin reference analysis for com.github.xyzboom:psi-reference-extractor")
         url.set("https://github.com/XYZboom/psi-reference-extractor")
-
-        // 配置项目的许可证信息
-        licenses {
-            license {
-                name.set("Apache-2.0")
-                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-            }
-        }
-
-        // 配置项目的开发者信息
-        developers {
-            developer {
-                id.set("Xiaotian Ma")
-                name.set("Xiaotian Ma")
-                email.set("xyzboom@qq.com")
-            }
-        }
     }
 }
 
@@ -71,23 +54,12 @@ publishing {
 }
 
 dependencies {
-    implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
-    implementation("org.slf4j:slf4j-api:2.0.12")
-    runtimeOnly("ch.qos.logback:logback-classic:1.4.14")
-    implementation("org.jgrapht:jgrapht-core:1.5.2")
-    implementation("org.jgrapht:jgrapht-io:1.5.2")
-    implementation("info.picocli:picocli:4.7.5")
-    api(rootProject)
-    implementation(project(":kotlin-compiler-context-utils"))
+    api(project(":intellij-core"))
+    api(project(":kt-references-analysis:analysis-api"))
+    api(project(":kt-references-analysis:analysis-api-fe10"))
+    api(project(":kt-references-analysis:analysis-api-impl-base"))
+    api(project(":kt-references-analysis:analysis-internal-utils"))
+    api(project(":kt-references-analysis:kt-references-fe10"))
+    api(project(":kt-references-analysis:project-structure"))
     testImplementation("org.jetbrains.kotlin:kotlin-test")
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
-kotlin {
-    jvmToolchain(17)
-}
-application {
-    mainClass = "com.github.xyzboom.extractor.MainKt"
 }
