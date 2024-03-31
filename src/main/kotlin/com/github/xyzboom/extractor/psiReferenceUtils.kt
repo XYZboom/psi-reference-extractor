@@ -6,6 +6,7 @@ import com.github.xyzboom.extractor.types.Annotation
 import com.github.xyzboom.extractor.types.Call
 import com.github.xyzboom.extractor.types.Class
 import com.github.xyzboom.extractor.utils.isExtension
+import com.github.xyzboom.kotlin.reference.KtClassDelegationReference
 import com.github.xyzboom.kotlin.reference.KtFunctionReturnReference
 import com.github.xyzboom.kotlin.reference.KtPropertyTypedReference
 import com.intellij.lang.java.JavaLanguage
@@ -146,8 +147,18 @@ private fun KtReference.getReferenceInfos(resolvedTargets: List<PsiElement>): Li
         is KtDefaultAnnotationArgumentReference -> listOf(UNKNOWN)
         is KtPropertyTypedReference -> getKtPropertyTypedReferenceInfos(resolvedTargets)
         is KtFunctionReturnReference -> getKtFunctionReturnReferenceInfos(resolvedTargets)
+        is KtClassDelegationReference -> getKtClassDelegationReferenceInfos(resolvedTargets)
         else -> throw ExtractorException("Unsupported reference type: ${this::class.java}")
     }
+
+private fun KtReference.getKtClassDelegationReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
+    val source = this.element
+    val sourceLanguage = source.language
+    return resolvedTargets.map { resolvedTarget ->
+        val targetType = resolvedTarget.targetType
+        ReferenceInfo(sourceLanguage, Class, ClassDelegate, resolvedTarget.language, targetType)
+    }
+}
 
 private fun KtReference.getKtFunctionReturnReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> {
     val source = this.element

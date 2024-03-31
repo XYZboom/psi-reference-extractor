@@ -50,6 +50,20 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     }
         
     @Nested
+    inner class DelegateTest {
+        @Test
+        fun test_delegate0() {
+            initCompilerEnv(Path.of("""src\testData\jvm\delegate\delegate0"""))
+            doValidate(
+                """src\testData\jvm\delegate\delegate0\result""",
+                null
+            )
+        }
+    
+    
+    }
+        
+    @Nested
     inner class ExpressionTest {
     
         @Nested

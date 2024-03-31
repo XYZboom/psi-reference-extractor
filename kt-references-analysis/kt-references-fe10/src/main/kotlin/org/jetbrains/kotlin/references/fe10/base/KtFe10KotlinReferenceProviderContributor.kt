@@ -71,6 +71,11 @@ class KtFe10KotlinReferenceProviderContributor : KotlinReferenceProviderContribu
                 if (function.hasDeclaredReturnType()) return@provider null
                 KtFe10FunctionReturnReference(function)
             }
+
+            registerProvider<KtDelegatedSuperTypeEntry> provider@{ ktDelegatedSuperTypeEntry ->
+                if (ktDelegatedSuperTypeEntry.delegateExpression == null) return@provider null
+                KtFe10ClassDelegationReference(ktDelegatedSuperTypeEntry)
+            }
         }
     }
 }
