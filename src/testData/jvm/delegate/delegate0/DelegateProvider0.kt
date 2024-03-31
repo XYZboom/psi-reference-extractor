@@ -1,7 +1,7 @@
-package `kotlin-code-examples`.delegate.delegate0
+package delegate.delegate0
 
-class DelegateProvider0 : IDelegateInterface0 {
+/*<target>*/class DelegateProvider0 : IDelegateInterface0 {
     override fun funcInIDelegateInterface(): String {
         return "DelegateProvider"
     }
-}
+}/*<target/>*/

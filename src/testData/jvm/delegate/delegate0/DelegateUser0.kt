@@ -1,3 +1,3 @@
-package `kotlin-code-examples`.delegate.delegate0
+package delegate.delegate0
 
-class DelegateUser0 : IDelegateInterface0 by DelegateProvider0()
+class DelegateUser0 : /*<source>*/IDelegateInterface0 by DelegateProvider0()/*<source/>*/
