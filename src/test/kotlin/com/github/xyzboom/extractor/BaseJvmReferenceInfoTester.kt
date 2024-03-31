@@ -113,11 +113,11 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
     private fun PsiElement.checkRange(
         start: PsiElement,
         end: PsiElement
-    ) = ((firstChild === start || prevLeaf() === start)
-            && (lastChild === end || nextLeaf() === end))
+    ) = ((firstChild === start || prevLeaf(true) === start)
+            && (lastChild === end || nextLeaf(true) === end))
 
     protected fun doValidate(scriptPath: String, extraScriptPath: String? = null) {
-        preparePsiElements()
+        preparePsiElements(extraScriptPath == null)
         val resultText = File(scriptPath).readText()
         val lines = resultText.lines()
         if (resultText.isEmpty() || lines.all(String::isEmpty)) fail("test result file is empty!")
@@ -157,7 +157,7 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
         }
     }
 
-    private fun preparePsiElements() {
+    private fun preparePsiElements(checkSourceReference: Boolean = true) {
         visitAllPsiFiles { file ->
             if (file is PsiJavaFile) {
                 file.accept(object : JavaRecursiveElementVisitor() {
@@ -218,7 +218,7 @@ open class BaseJvmReferenceInfoTester : KotlinJvmCompilerContext() {
                 "The start element at: ${start.first.posStr()} must be in the same file as the end element at: ${end.first.posStr()}"
             }
             val sourceElement = start.second.findElementAt(start.first.endOffset)
-                ?.parentRangeIn(start.first, end.first, true)
+                ?.parentRangeIn(start.first, end.first, checkSourceReference)
                 ?: fail("Could not found element that has reference between ${start.first.posStr()} and ${end.first.posStr()}.")
             sourceElementMap[key] = sourceElement
         }

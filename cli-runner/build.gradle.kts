@@ -1,6 +1,9 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     kotlin("jvm")
     application
+    id("com.github.johnrengelman.shadow") version "7.0.0"
 }
 
 group = "com.github.xyzboom"
@@ -30,4 +33,9 @@ kotlin {
 }
 application {
     mainClass = "com.github.xyzboom.extractor.MainKt"
+}
+tasks.withType<ShadowJar>() {
+    manifest {
+        attributes["Main-Class"] = "com.github.xyzboom.extractor.MainKt"
+    }
 }

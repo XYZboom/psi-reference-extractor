@@ -10,6 +10,7 @@ import com.github.xyzboom.kotlin.reference.KtFunctionReturnReference
 import com.github.xyzboom.kotlin.reference.KtPropertyTypedReference
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.util.Key
+import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
@@ -73,6 +74,7 @@ val PsiReference?.referenceInfos: List<ReferenceInfo>
 fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> =
     when {
         this is PsiReferenceExpression -> getReferenceInfos(resolvedTargets)
+
         element.parent is PsiNewExpression -> resolvedTargets.map { resolvedTarget ->
             ReferenceInfo(
                 JavaLanguage.INSTANCE, Expression, Create,
@@ -80,7 +82,20 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
             )
         }
 
-        else -> listOf()
+        else -> resolvedTargets.map { resolvedTarget ->
+            val sourceType = element.sourceType
+            when (resolvedTarget.targetType) {
+                Annotation -> ReferenceInfo(
+                    JavaLanguage.INSTANCE,
+                    sourceType,
+                    Create,
+                    resolvedTarget.language,
+                    Annotation
+                )
+
+                else -> UNKNOWN
+            }
+        }
     }
 
 private fun PsiReferenceExpression.getReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> =
@@ -261,7 +276,19 @@ val PsiElement.sourceType: IReferenceSourceType
 
         is KtFunction -> Method
 
-        else -> Unknown
+        else -> when {
+            parent is PsiAnnotation -> {
+                val parent3 = parent.parent.parent
+                when {
+                    parent3 is PsiClass -> Class
+                    parent3 is PsiField -> Field
+                    parent3 is PsiMethod -> Method
+                    else -> Unknown
+                }
+            }
+
+            else -> Unknown
+        }
     }
 
 val PsiElement.targetType: IReferenceTargetType
@@ -280,8 +307,8 @@ val PsiElement.targetType: IReferenceTargetType
 
         is PsiClass ->
             when {
-                isInterface -> Interface
                 isAnnotationType -> Annotation
+                isInterface -> Interface
                 else -> Class
             }
 

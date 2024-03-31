@@ -26,10 +26,19 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
     @CommandLine.Option(names = ["-o", "--output"], description = ["output file prefix"], defaultValue = ".")
     lateinit var output: File
 
-    @CommandLine.Option(names = ["-g", "--granularity"], split = ",", converter = [GranularityConverter::class], defaultValue = "file")
+    @CommandLine.Option(
+        names = ["-g", "--granularity"],
+        split = ",", converter = [GranularityConverter::class], defaultValue = "file",
+        description = ["granularity, choose in [file, class, member, expression]"]
+    )
     lateinit var granularity: Array<TypedRefExtractor<PsiElement, GrammarOrRefEdge>>
 
-    @CommandLine.Option(names = ["-f", "--format"], split = ",", converter = [ExporterConverter::class], defaultValue = "json")
+    @CommandLine.Option(
+        names = ["-f", "--format"],
+        split = ",",
+        converter = [ExporterConverter::class],
+        defaultValue = "json"
+    )
     lateinit var exporters: Array<ExporterProxy<PsiElement, GrammarOrRefEdge>>
 
     val elementGraph = DirectedWeightedMultigraph<PsiElement, GrammarOrRefEdge>(GrammarOrRefEdge::class.java)
@@ -49,20 +58,31 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
 
         override fun visitElement(element: PsiElement) {
             elementGraph.addVertex(element)
-            val reference = element.reference ?: kotlin.run {
-                super.visitElement(element)
-                return
+            val reference = try {
+                element.reference ?: kotlin.run {
+                    return super.visitElement(element)
+                }
+            } catch (e: Exception) {
+                logger.error { e.message }
+                return super.visitElement(element)
             }
-            val targets = reference.multiResolveToElement()
+            val targets = try {
+                reference.multiResolveToElement()
+            } catch (e: Exception) {
+                logger.error { e.message }
+                return super.visitElement(element)
+            }
             val referenceInfos = reference.referenceInfos
-            require(referenceInfos.size == targets.size)
+            if (referenceInfos.size != targets.size) {
+                return super.visitElement(element)
+            }
             for ((i, target) in targets.withIndex()) {
                 val referenceInfo = referenceInfos[i]
                 if (referenceInfo === ReferenceInfo.UNKNOWN && element !== target
                     && reference !is KtDefaultAnnotationArgumentReference
                 ) {
                     reference.referenceInfos
-                    logger.info { "unknown reference info at source: ${element.posStr()}, target: ${target.posStr()}" }
+                    logger.trace { "unknown reference info at source: ${element.posStr()}, target: ${target.posStr()}" }
                 }
                 if (referenceInfo != ReferenceInfo.UNKNOWN) {
                     if (target !in elementGraph.vertexSet()) {
@@ -76,7 +96,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
         }
     }
 
-    private fun PsiElement.formatToStr() : String {
+    private fun PsiElement.formatToStr(): String {
         return when {
             this is PsiFile -> virtualFile.path
             dependElements.contains(this) -> "$this (Not in project)"

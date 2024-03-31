@@ -19,6 +19,33 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
             )
         }
     
+        @Test
+        fun test_annotationInJavaClass() {
+            initCompilerEnv(Path.of("""src\testData\jvm\annotation\annotationInJavaClass"""))
+            doValidate(
+                """src\testData\jvm\annotation\annotationInJavaClass\result""",
+                """src\testData\jvm\annotation\annotationInJavaClass\extra"""
+            )
+        }
+    
+        @Test
+        fun test_annotationInJavaField() {
+            initCompilerEnv(Path.of("""src\testData\jvm\annotation\annotationInJavaField"""))
+            doValidate(
+                """src\testData\jvm\annotation\annotationInJavaField\result""",
+                """src\testData\jvm\annotation\annotationInJavaField\extra"""
+            )
+        }
+    
+        @Test
+        fun test_annotationInJavaMethod() {
+            initCompilerEnv(Path.of("""src\testData\jvm\annotation\annotationInJavaMethod"""))
+            doValidate(
+                """src\testData\jvm\annotation\annotationInJavaMethod\result""",
+                """src\testData\jvm\annotation\annotationInJavaMethod\extra"""
+            )
+        }
+    
     
     }
         

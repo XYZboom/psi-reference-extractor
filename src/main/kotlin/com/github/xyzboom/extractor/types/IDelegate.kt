@@ -1,3 +1,3 @@
 package com.github.xyzboom.extractor.types
 
-data object PropertyDelegate : IDelegate
+sealed interface IDelegate : IReferenceType
