@@ -58,7 +58,7 @@ open class KotlinJvmCompilerContext {
     fun visitAllPsiFiles(visitor: (PsiFile) -> Unit) {
         environment.configuration.javaSourceRoots.mapNotNull(environment::findLocalFile).forEach {
             val file = PsiManager.getInstance(project).findFile(it)!!
-            visitor(file)
+                visitor(file)
         }
     }
 

@@ -41,6 +41,9 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
     )
     lateinit var exporters: Array<ExporterProxy<PsiElement, GrammarOrRefEdge>>
 
+    @CommandLine.Option(names = ["-eu", "--export-unknown"], description = ["export unknown references"])
+    var exportUnknown: Boolean = false
+
     val elementGraph = DirectedWeightedMultigraph<PsiElement, GrammarOrRefEdge>(GrammarOrRefEdge::class.java)
     val dependElements = HashSet<PsiElement>()
 
@@ -84,7 +87,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                     reference.referenceInfos
                     logger.trace { "unknown reference info at source: ${element.posStr()}, target: ${target.posStr()}" }
                 }
-                if (referenceInfo != ReferenceInfo.UNKNOWN) {
+                if (referenceInfo != ReferenceInfo.UNKNOWN || exportUnknown) {
                     if (target !in elementGraph.vertexSet()) {
                         elementGraph.addVertex(target)
                         dependElements.add(target)
@@ -111,8 +114,14 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
         }
         logger.info { "init compiler cost: $initCompilerEnvTime" }
         logger.info { "start record all psi files" }
+        if (exportUnknown) {
+            logger.info { "running with export unknown references" }
+        }
         val visitAllPsiFilesTime = measureTime {
             visitAllPsiFiles {
+                if (it.containingDirectory.virtualFile.path.contains(".gradle")) {
+                    return@visitAllPsiFiles
+                }
                 it.accept(AddAllElementVisitor())
             }
         }
