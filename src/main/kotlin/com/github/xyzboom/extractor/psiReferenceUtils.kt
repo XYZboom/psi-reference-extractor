@@ -23,6 +23,9 @@ import com.intellij.psi.PsiNewExpression
 import com.intellij.psi.PsiPolyVariantReference
 import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceExpression
+import com.intellij.psi.PsiReferenceList
+import com.intellij.psi.impl.java.stubs.JavaStubElementTypes
+import com.intellij.psi.util.elementType
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.references.*
 import org.jetbrains.kotlin.psi.*
@@ -82,6 +85,17 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
                 resolvedTarget.language, resolvedTarget.targetType
             )
         }
+        element.parent is PsiReferenceList ->
+            when (element.parent.elementType) {
+                JavaStubElementTypes.EXTENDS_LIST ->
+                    resolvedTargets.map { resolvedTarget ->
+                        ReferenceInfo(
+                            JavaLanguage.INSTANCE, Class, Extend,
+                            resolvedTarget.language, resolvedTarget.targetType
+                        )
+                    }
+                else -> resolvedTargets.map { UNKNOWN }
+            }
 
         else -> resolvedTargets.map { resolvedTarget ->
             val sourceType = element.sourceType
@@ -296,6 +310,10 @@ val PsiElement.sourceType: IReferenceSourceType
                     parent3 is PsiMethod -> Method
                     else -> Unknown
                 }
+            }
+
+            parent is PsiReferenceList && parent.elementType == JavaStubElementTypes.EXTENDS_LIST -> {
+                Class
             }
 
             else -> Unknown

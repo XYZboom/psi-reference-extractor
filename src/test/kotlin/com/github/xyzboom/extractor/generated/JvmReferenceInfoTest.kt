@@ -340,6 +340,24 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
             )
         }
     
+        @Test
+        fun test_inheritJ_J() {
+            initCompilerEnv(Path.of("""src\testData\jvm\inherit\inheritJ_J"""))
+            doValidate(
+                """src\testData\jvm\inherit\inheritJ_J\result""",
+                null
+            )
+        }
+    
+        @Test
+        fun test_inheritJ_K() {
+            initCompilerEnv(Path.of("""src\testData\jvm\inherit\inheritJ_K"""))
+            doValidate(
+                """src\testData\jvm\inherit\inheritJ_K\result""",
+                null
+            )
+        }
+    
     
     }
         
