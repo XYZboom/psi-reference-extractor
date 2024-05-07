@@ -27,6 +27,7 @@ Usage: RefExtract [-eu] [-o=<output>] [-f=<exporters>[,<exporters>...]]...
   -o, --output=<output>   output file prefix
 ```
 
+The default output file is at the directory where you run the jar.
 ### API Usage
 
 Due to the experimental version of the Kotlin compiler interface used, this feature is temporarily unstable.
