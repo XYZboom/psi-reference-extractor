@@ -10,8 +10,9 @@ The tool provides dependency graph extraction function and supports file formats
 
 Download **PSI-Reference-Extractor** in [release page](https://github.com/XYZboom/psi-reference-extractor/releases).
 
-Run `java -jar cli-runner-1.0.0-SNAPSHOT-all.jar -h`  to see help messages.
+Run `java -jar -Dlogback.configurationFile=close_log.xml cli-runner-1.0.0-SNAPSHOT-all.jar -h`  to see help messages.
 
+If need log, remove `-Dlogback.configurationFile=close_log.xml` or use your log config file.
 ```
 Usage: RefExtract [-eu] [-o=<output>] [-f=<exporters>[,<exporters>...]]...
                   [-g=<granularity>[,<granularity>...]]... <input>
