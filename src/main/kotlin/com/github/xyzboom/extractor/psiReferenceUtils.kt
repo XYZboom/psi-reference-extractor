@@ -256,7 +256,17 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
         } else if (element.getParentOfType<KtImportList>(false) != null) {
             ReferenceInfo(KotlinLanguage.INSTANCE, File, Import, targetLanguage, targetType)
         } else if (element.getParentOfType<KtSuperTypeEntry>(false) != null) {
-            ReferenceInfo(KotlinLanguage.INSTANCE, Class, Implement, targetLanguage, targetType)
+            when (targetType) {
+                Class -> {
+                    ReferenceInfo(KotlinLanguage.INSTANCE, Class, Extend, targetLanguage, targetType)
+                }
+                Interface -> {
+                    ReferenceInfo(KotlinLanguage.INSTANCE, Class, Implement, targetLanguage, targetType)
+                }
+                else -> {
+                    ReferenceInfo(KotlinLanguage.INSTANCE, Class, Unknown, targetLanguage, targetType)
+                }
+            }
         } else if (element.getParentOfType<KtSuperTypeCallEntry>(false) != null) {
             ReferenceInfo(KotlinLanguage.INSTANCE, Class, Extend, targetLanguage, targetType)
         } else if (element.getParentOfType<KtAnnotationEntry>(false) != null) {

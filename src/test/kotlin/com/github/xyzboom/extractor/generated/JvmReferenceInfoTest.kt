@@ -347,7 +347,30 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
         
     @Nested
     inner class InheritTest {
-        @Test
+    
+        @Nested
+        inner class AnonymousClassTest {
+            @Test
+            fun test_anonymousClass0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\inherit\anonymousClass\anonymousClass0"""))
+                doValidate(
+                    """src\testData\jvm\inherit\anonymousClass\anonymousClass0\result""",
+                    null
+                )
+            }
+    
+            @Test
+            fun test_anonymousClass1() {
+                initCompilerEnv(Path.of("""src\testData\jvm\inherit\anonymousClass\anonymousClass1"""))
+                doValidate(
+                    """src\testData\jvm\inherit\anonymousClass\anonymousClass1\result""",
+                    null
+                )
+            }
+    
+    
+        }
+            @Test
         fun test_constructorDelegation0() {
             initCompilerEnv(Path.of("""src\testData\jvm\inherit\constructorDelegation0"""))
             doValidate(
