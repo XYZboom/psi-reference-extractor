@@ -10,7 +10,9 @@ object JvmReferenceInfoTestGenerator {
     private val logger = KotlinLogging.logger {}
 
     private const val TEST_DATA_PATH = "src/testData/jvm/"
-    private const val TEST_OUTPUT_PATH = "src/test/kotlin/com/github/xyzboom/extractor/generated/JvmReferenceInfoTest.kt"
+    private const val TEST_OUTPUT_PATH =
+        "src/test/kotlin/com/github/xyzboom/extractor/generated/JvmReferenceInfoTest.kt"
+    private const val IGNORE_FILE_NAME = "ignore"
     private const val RESULT_FILE_NAME = "result"
     private const val EXTRA_SCRIPTS_FILE_NAME = "extra"
     private const val MAIN_TEST_CLASS_NAME = "JvmReferenceInfoTest"
@@ -30,9 +32,10 @@ object JvmReferenceInfoTestGenerator {
         val (file, sb) = fileStateStack.peek()
         require(File(file, testNameDir) == dir)
         val extraScriptsFile = File(dir, EXTRA_SCRIPTS_FILE_NAME)
+        val ignoreFile = File(dir, IGNORE_FILE_NAME)
         sb.append(
             """
-            |@Test
+            |@Test${if (ignoreFile.exists()) "\n@Disabled" else ""}
             |fun $testName() {
             |    initCompilerEnv(Path.of(${"\"\"\""}${dir.path}${"\"\"\""}))
             |    doValidate(
@@ -105,6 +108,7 @@ object JvmReferenceInfoTestGenerator {
             |import com.github.xyzboom.extractor.BaseJvmReferenceInfoTester
             |import org.junit.jupiter.api.Nested
             |import org.junit.jupiter.api.Test
+            |import org.junit.jupiter.api.Disabled
             |import java.nio.file.Path
             |
             |class $MAIN_TEST_CLASS_NAME : BaseJvmReferenceInfoTester() {

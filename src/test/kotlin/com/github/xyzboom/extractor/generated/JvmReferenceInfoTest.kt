@@ -4,6 +4,7 @@ package com.github.xyzboom.extractor.generated
 import com.github.xyzboom.extractor.BaseJvmReferenceInfoTester
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Disabled
 import java.nio.file.Path
 
 class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
@@ -241,6 +242,16 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
                 initCompilerEnv(Path.of("""src\testData\jvm\expression\destructure\destructure0"""))
                 doValidate(
                     """src\testData\jvm\expression\destructure\destructure0\result""",
+                    null
+                )
+            }
+    
+            @Test
+        @Disabled
+            fun test_destructure1() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\destructure\destructure1"""))
+                doValidate(
+                    """src\testData\jvm\expression\destructure\destructure1\result""",
                     null
                 )
             }
