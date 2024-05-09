@@ -250,7 +250,21 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
         
         @Nested
         inner class OperatorOverloadTest {
-            @Test
+    
+            @Nested
+            inner class OperatorInvokeTest {
+                @Test
+                fun test_invoke0() {
+                    initCompilerEnv(Path.of("""src\testData\jvm\expression\operatorOverload\operatorInvoke\invoke0"""))
+                    doValidate(
+                        """src\testData\jvm\expression\operatorOverload\operatorInvoke\invoke0\result""",
+                        null
+                    )
+                }
+    
+    
+            }
+                @Test
             fun test_operatorOverload0() {
                 initCompilerEnv(Path.of("""src\testData\jvm\expression\operatorOverload\operatorOverload0"""))
                 doValidate(
