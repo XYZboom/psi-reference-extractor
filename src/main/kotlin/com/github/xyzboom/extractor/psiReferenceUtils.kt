@@ -137,8 +137,9 @@ private fun KtReference.getReferenceInfos(resolvedTargets: List<PsiElement>): Li
         is KtCollectionLiteralReference -> listOf(UNKNOWN)
         is KtConstructorDelegationReference -> {
             resolvedTargets.map { resolvedTarget ->
-                require(resolvedTarget.targetType == Constructor)
-                ReferenceInfo(KotlinLanguage.INSTANCE, Class, Call, resolvedTarget.language, Constructor)
+                val targetType = resolvedTarget.targetType
+                require(targetType == Constructor || targetType == Class)
+                ReferenceInfo(KotlinLanguage.INSTANCE, Class, Call, resolvedTarget.language, targetType)
             }
         }
 

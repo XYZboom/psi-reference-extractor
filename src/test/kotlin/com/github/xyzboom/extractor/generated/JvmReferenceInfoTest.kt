@@ -323,6 +323,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     @Nested
     inner class InheritTest {
         @Test
+        fun test_constructorDelegation0() {
+            initCompilerEnv(Path.of("""src\testData\jvm\inherit\constructorDelegation0"""))
+            doValidate(
+                """src\testData\jvm\inherit\constructorDelegation0\result""",
+                null
+            )
+        }
+    
+        @Test
         fun test_inherit0() {
             initCompilerEnv(Path.of("""src\testData\jvm\inherit\inherit0"""))
             doValidate(
