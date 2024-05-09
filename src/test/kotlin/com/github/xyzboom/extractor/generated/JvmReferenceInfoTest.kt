@@ -182,7 +182,21 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
                 )
             }
     
-            @Test
+    
+            @Nested
+            inner class CallUnionTypeFuncTest {
+                @Test
+                fun test_callUnionTypeFunc0() {
+                    initCompilerEnv(Path.of("""src\testData\jvm\expression\call\callUnionTypeFunc\callUnionTypeFunc0"""))
+                    doValidate(
+                        """src\testData\jvm\expression\call\callUnionTypeFunc\callUnionTypeFunc0\result""",
+                        null
+                    )
+                }
+    
+    
+            }
+                @Test
             fun test_JavaCallKotlinToplevel0() {
                 initCompilerEnv(Path.of("""src\testData\jvm\expression\call\JavaCallKotlinToplevel0"""))
                 doValidate(
