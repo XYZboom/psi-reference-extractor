@@ -75,7 +75,12 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                 logger.error { e.message }
                 return super.visitElement(element)
             }
-            val referenceInfos = reference.referenceInfos
+            val referenceInfos = try {
+                reference.referenceInfos
+            } catch (e: Exception) {
+                logger.error { e.message }
+                return super.visitElement(element)
+            }
             if (referenceInfos.size != targets.size) {
                 return super.visitElement(element)
             }
