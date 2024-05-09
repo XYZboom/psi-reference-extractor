@@ -1,9 +1,6 @@
 package com.github.xyzboom.extractor
 
-import com.github.xyzboom.extractor.types.IReferenceSourceType
-import com.github.xyzboom.extractor.types.IReferenceType
-import com.github.xyzboom.extractor.types.IReferenceTargetType
-import com.github.xyzboom.extractor.types.Unknown
+import com.github.xyzboom.extractor.types.*
 import com.intellij.lang.Language
 import org.jetbrains.annotations.ApiStatus
 

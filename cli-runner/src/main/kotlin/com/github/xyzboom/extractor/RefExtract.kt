@@ -107,7 +107,14 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
         }
     }
 
+    private fun checkArgs() {
+        if (!input.canRead()) {
+            error("${input.absolutePath} is not readable!")
+        }
+    }
+
     override fun run() {
+        checkArgs()
         logger.info { "start init compiler env" }
         val initCompilerEnvTime = measureTime {
             initCompilerEnv(input.toPath())
@@ -122,7 +129,12 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                 if (it.containingDirectory.virtualFile.path.contains(".gradle")) {
                     return@visitAllPsiFiles
                 }
-                it.accept(AddAllElementVisitor())
+                try {
+                    it.accept(AddAllElementVisitor())
+                } catch (e: Throwable) {
+                    logger.error { "error when visit $it" }
+                    logger.trace { e.stackTraceToString() }
+                }
             }
         }
         logger.info { "record all psi files cost: $visitAllPsiFilesTime" }
