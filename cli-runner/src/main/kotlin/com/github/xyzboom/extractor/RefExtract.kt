@@ -2,6 +2,7 @@ package com.github.xyzboom.extractor
 
 import com.github.xyzboom.extractor.converter.ExporterConverter
 import com.github.xyzboom.extractor.converter.GranularityConverter
+import com.github.xyzboom.extractor.types.*
 import com.github.xyzboom.ktcutils.KotlinJvmCompilerContext
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -119,6 +120,12 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
     }
 
     override fun run() {
+        val allTime = measureTime {
+            doRun()
+        }
+        logger.info { "all cost: $allTime" }
+    }
+    private fun doRun() {
         checkArgs()
         logger.info { "start init compiler env" }
         val initCompilerEnvTime = measureTime {
@@ -150,6 +157,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
             }
         }
         logger.info { "analyze references cost: $analyzeReferencesTime" }
+        logDependencyInfo(elementGraph)
         logger.info { "start extract references" }
         val extractTime = measureTime {
             granularity.forEach { extractor ->
@@ -176,5 +184,22 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
             }
         }
         logger.info { "extract references cost: $extractTime" }
+    }
+
+    private fun logDependencyInfo(elementGraph: DirectedWeightedMultigraph<PsiElement, GrammarOrRefEdge>) {
+        val countMap = hashMapOf<IReferenceType, Int>()
+        for (edge in elementGraph.edgeSet()) {
+            val info = edge.referenceInfo
+            if (info != null) {
+                if (countMap.contains(info.referenceType)) {
+                    countMap[info.referenceType] = countMap[info.referenceType]!! + 1
+                } else {
+                    countMap[info.referenceType] = 1
+                }
+            }
+        }
+        for ((type, count) in countMap) {
+            logger.trace { "$type: $count" }
+        }
     }
 }
