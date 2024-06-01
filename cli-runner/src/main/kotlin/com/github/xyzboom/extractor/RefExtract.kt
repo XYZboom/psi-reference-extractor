@@ -137,9 +137,11 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
             this is KtNamedDeclaration && fqName != null ->
                 fqName!!.asString()
 
-            this is KtConstructor<*> &&  getContainingClassOrObject().fqName != null -> {
-                val fqName = getContainingClassOrObject().fqName
-                fqName!!.asString()
+            this is KtConstructor<*> && getContainingClassOrObject().fqName != null
+                    && getContainingClassOrObject().name != null -> {
+                val fqName = getContainingClassOrObject().fqName!!
+                val name = getContainingClassOrObject().name!!
+                fqName.asString() + "." + name
             }
 
             else -> null

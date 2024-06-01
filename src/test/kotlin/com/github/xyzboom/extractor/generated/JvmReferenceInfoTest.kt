@@ -70,10 +70,28 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
         @Nested
         inner class AccessTest {
             @Test
+            fun test_javaAccessJavaClass() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\access\javaAccessJavaClass"""))
+                doValidate(
+                    """src\testData\jvm\expression\access\javaAccessJavaClass\result""",
+                    null
+                )
+            }
+    
+            @Test
             fun test_javaAccessJavaField0() {
                 initCompilerEnv(Path.of("""src\testData\jvm\expression\access\javaAccessJavaField0"""))
                 doValidate(
                     """src\testData\jvm\expression\access\javaAccessJavaField0\result""",
+                    null
+                )
+            }
+    
+            @Test
+            fun test_javaAccessKotlinClass() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\access\javaAccessKotlinClass"""))
+                doValidate(
+                    """src\testData\jvm\expression\access\javaAccessKotlinClass\result""",
                     null
                 )
             }
