@@ -1,0 +1,1 @@
+class Target(/*<target>*/val x: Int/*<target/>*/)

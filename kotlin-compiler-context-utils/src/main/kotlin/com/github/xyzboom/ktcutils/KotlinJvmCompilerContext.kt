@@ -191,8 +191,8 @@ open class KotlinJvmCompilerContext {
         return File(CharRange::class.java.protectionDomain.codeSource.location.path)
     }
 
-    protected fun PsiElement.posStr(): String {
-        val document = psiDocumentManager.getDocument(containingFile)!!
+    protected open fun PsiElement.posStr(): String {
+        val document = psiDocumentManager.getDocument(containingFile) ?: return "(Not in project)"
         val startLine = document.getLineNumber(startOffset)
         val startCol = startOffset - document.getLineStartOffset(startLine)
         return "file:///${containingFile.virtualFile.path}:${startLine + 1}:${startCol + 1}"

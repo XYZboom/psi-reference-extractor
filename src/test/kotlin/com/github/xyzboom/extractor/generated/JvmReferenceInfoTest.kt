@@ -70,6 +70,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
         @Nested
         inner class AccessTest {
             @Test
+            fun test_javaAccessJavaField0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\access\javaAccessJavaField0"""))
+                doValidate(
+                    """src\testData\jvm\expression\access\javaAccessJavaField0\result""",
+                    null
+                )
+            }
+    
+            @Test
             fun test_kotlinAccessJavaMethod0() {
                 initCompilerEnv(Path.of("""src\testData\jvm\expression\access\kotlinAccessJavaMethod0"""))
                 doValidate(
@@ -489,6 +498,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
             initCompilerEnv(Path.of("""src\testData\jvm\property\kotlinProperty1"""))
             doValidate(
                 """src\testData\jvm\property\kotlinProperty1\result""",
+                null
+            )
+        }
+    
+        @Test
+        fun test_kotlinPropertyAsJavaMethod() {
+            initCompilerEnv(Path.of("""src\testData\jvm\property\kotlinPropertyAsJavaMethod"""))
+            doValidate(
+                """src\testData\jvm\property\kotlinPropertyAsJavaMethod\result""",
                 null
             )
         }

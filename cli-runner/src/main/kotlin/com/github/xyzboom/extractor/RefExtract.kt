@@ -4,11 +4,18 @@ import com.github.xyzboom.extractor.converter.ExporterConverter
 import com.github.xyzboom.extractor.converter.GranularityConverter
 import com.github.xyzboom.extractor.types.*
 import com.github.xyzboom.ktcutils.KotlinJvmCompilerContext
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiRecursiveElementVisitor
+import com.intellij.psi.*
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.jetbrains.kotlin.asJava.elements.KtLightElement
+import org.jetbrains.kotlin.asJava.elements.KtLightMember
 import org.jetbrains.kotlin.idea.references.KtDefaultAnnotationArgumentReference
+import org.jetbrains.kotlin.psi.KtConstructor
+import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtNamedDeclaration
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
+import org.jetbrains.kotlin.psi.psiUtil.getQualifiedElementSelector
+import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jgrapht.graph.DirectedWeightedMultigraph
 import org.jgrapht.nio.DefaultAttribute
 import picocli.CommandLine
@@ -105,11 +112,42 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
         }
     }
 
+    private fun PsiElement.posStrWithoutFilePrefix(): String {
+        val document = psiDocumentManager.getDocument(containingFile) ?: return "(Not in project)"
+        textRange ?: return "(Not in project)"
+        val startLine = document.getLineNumber(startOffset)
+        val startCol = startOffset - document.getLineStartOffset(startLine)
+        val containingPath = containingFile.virtualFile.path.replace("\\", "/")
+        val inputPath = input.canonicalPath.replace("\\", "/")
+        return "${containingPath.removePrefix(inputPath)}:${startLine + 1}:${startCol + 1}"
+    }
+
     private fun PsiElement.formatToStr(): String {
-        return when {
-            this is PsiFile -> virtualFile.path
-            dependElements.contains(this) -> "$this (Not in project)"
-            else -> posStr()
+        val fqName =  when {
+            this is PsiFile -> virtualFile.path.removePrefix(input.canonicalPath)
+            this is PsiQualifiedNamedElement && qualifiedName != null ->
+                qualifiedName!!
+
+            this is KtLightElement<*, *> && kotlinOrigin != null ->
+                kotlinOrigin!!.formatToStr()
+
+            this is PsiMember && containingClass != null ->
+                containingClass!!.qualifiedName + "." + name
+
+            this is KtNamedDeclaration && fqName != null ->
+                fqName!!.asString()
+
+            this is KtConstructor<*> &&  getContainingClassOrObject().fqName != null -> {
+                val fqName = getContainingClassOrObject().fqName
+                fqName!!.asString()
+            }
+
+            else -> null
+        }
+        return if (fqName == null) {
+            posStrWithoutFilePrefix()
+        } else {
+            fqName + "|" + posStrWithoutFilePrefix()
         }
     }
 
@@ -125,6 +163,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
         }
         logger.info { "all cost: $allTime" }
     }
+
     private fun doRun() {
         checkArgs()
         logger.info { "start init compiler env" }

@@ -16,6 +16,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiIdentifier
 import com.intellij.psi.PsiJavaReference
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
@@ -26,6 +27,8 @@ import com.intellij.psi.PsiReferenceExpression
 import com.intellij.psi.PsiReferenceList
 import com.intellij.psi.impl.java.stubs.JavaStubElementTypes
 import com.intellij.psi.util.elementType
+import org.jetbrains.kotlin.asJava.elements.KtLightElement
+import org.jetbrains.kotlin.asJava.elements.KtLightMember
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.references.*
 import org.jetbrains.kotlin.psi.*
@@ -120,14 +123,22 @@ private fun PsiReferenceExpression.getReferenceInfos(resolvedTargets: List<PsiEl
                 if (resolvedTarget.language === JavaLanguage.INSTANCE) {
                     ReferenceInfo(JavaLanguage.INSTANCE, Expression, Call, JavaLanguage.INSTANCE, Method)
                 } else if (resolvedTarget.language === KotlinLanguage.INSTANCE) {
-                    val targetType = if (resolvedTarget is KtProperty) Property else Method
+                    val targetType = resolvedTarget.targetType
                     ReferenceInfo(JavaLanguage.INSTANCE, Expression, Call, KotlinLanguage.INSTANCE, targetType)
                 } else UNKNOWN
             }
         } else {
             listOf(ReferenceInfo(JavaLanguage.INSTANCE, Expression, Call, null, null))
         }
-    } else listOf(UNKNOWN)
+    } else {
+        if (children.size == 2 && children[1] is PsiIdentifier) {
+            resolvedTargets.map {
+                ReferenceInfo(JavaLanguage.INSTANCE, Expression, Access, it.language, it.targetType)
+            }
+        } else {
+            listOf(UNKNOWN)
+        }
+    }
 
 private fun KtReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<ReferenceInfo> =
     when (this) {
@@ -333,6 +344,14 @@ val PsiElement.sourceType: IReferenceSourceType
 
 val PsiElement.targetType: IReferenceTargetType
     get() = when (this) {
+        is KtLightElement<*, *> ->
+            if (kotlinOrigin != null) {
+                @Suppress("RecursivePropertyAccessor")
+                kotlinOrigin!!.targetType
+            } else {
+                Unknown
+            }
+
         is KtConstructor<*> -> Constructor
         is KtClassOrObject ->
             when (this) {
