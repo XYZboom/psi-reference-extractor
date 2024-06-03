@@ -1,51 +1,58 @@
 package com.github.xyzboom.extractor.converter
 
-import com.github.xyzboom.extractor.GrammarOrRefEdge
-import com.github.xyzboom.extractor.ReferenceInfo
-import com.github.xyzboom.extractor.TypedRefExtractor
-import com.intellij.psi.PsiClass
+import com.github.xyzboom.extractor.*
+import com.github.xyzboom.extractor.types.Parameter
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiMember
-import org.jetbrains.kotlin.psi.*
 
 class GranularityConverter : ConverterFromMap<TypedRefExtractor<PsiElement, GrammarOrRefEdge>>(supportedConverterMap) {
     companion object {
-        private fun isFile(ele: PsiElement): Boolean {
-            return ele is PsiFile
+        private val myIsFile = wrapper<PsiElement, GrammarOrRefEdge, Boolean>(::isFile)
+        private val myIsClass = wrapper<PsiElement, GrammarOrRefEdge, Boolean>(::isClass)
+        private fun isSourceMember(element: PsiElement, edge: GrammarOrRefEdge): Boolean {
+            val info = edge.referenceInfo ?: return true
+            return when (info.referenceType) {
+                Parameter -> isNormalMember(element)
+                else -> isNormalMember(element) || isPropertyInConstructor(element)
+            }
         }
 
-        private fun isClass(it: PsiElement): Boolean {
-            return it is PsiClass || it is KtClassOrObject
-        }
-
-        private fun isMember(it: PsiElement): Boolean {
-            return it is PsiMember || it is KtNamedFunction || (it is KtProperty && !it.isLocal)
+        private fun isTargetMember(element: PsiElement, edge: GrammarOrRefEdge): Boolean {
+            val info = edge.referenceInfo ?: return true
+            return when (info.referenceType) {
+                Parameter -> isClass(element)
+                else -> isNormalMember(element) || isPropertyInConstructor(element)
+            }
         }
 
         private val supportedConverterMap = hashMapOf<String, TypedRefExtractor<PsiElement, GrammarOrRefEdge>>(
             "file" to TypedRefExtractor(
-                "file", ::isFile, { it.referenceInfo == null },
+                "file", myIsFile, myIsFile, { it.referenceInfo == null },
                 { it.referenceInfo != null },
                 GrammarOrRefEdge::class.java
             ),
             "class" to TypedRefExtractor(
-                "class", ::isClass, { it.referenceInfo == null },
+                "class", myIsClass, myIsClass, { it.referenceInfo == null },
                 { it.referenceInfo != null },
                 GrammarOrRefEdge::class.java
             ),
             "member" to TypedRefExtractor(
-                "member", ::isMember, { it.referenceInfo == null },
+                "member", ::isSourceMember, ::isTargetMember, { it.referenceInfo == null },
                 { it.referenceInfo != null },
                 GrammarOrRefEdge::class.java
             ),
-            "structure" to TypedRefExtractor("structure", {
-                isMember(it) || isClass(it) || isFile(it)
-            }, { it.referenceInfo == null },
+            "structure" to TypedRefExtractor("structure", { ele, edge ->
+                isSourceMember(ele, edge) || isClass(ele) || isFile(ele)
+            }, { ele, edge ->
+                isTargetMember(ele, edge) || isClass(ele) || isFile(ele)
+            },
+                { it.referenceInfo == null },
                 { it.referenceInfo != null },
                 GrammarOrRefEdge::class.java
             ),
-            "expression" to TypedRefExtractor("expression", { true }, { it.referenceInfo == null },
+            "expression" to TypedRefExtractor(
+                "expression", { _, _ -> true },
+                { _, _ -> true },
+                { it.referenceInfo == null },
                 { it.referenceInfo != null },
                 GrammarOrRefEdge::class.java
             )

@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.psi.KtConstructor
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedDeclaration
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.getQualifiedElementSelector
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
@@ -58,7 +59,10 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
     private inner class AddAllElementVisitor : PsiRecursiveElementVisitor() {
         override fun visitElement(element: PsiElement) {
             elementGraph.addVertex(element)
-            if (element.parent != null && elementGraph.containsVertex(element.parent)) {
+            if (element.parent != null) {
+                if (!elementGraph.containsVertex(element.parent)) {
+                    elementGraph.addVertex(element.parent)
+                }
                 elementGraph.addEdge(element.parent, element, GrammarOrRefEdge(null))
             }
             super.visitElement(element)
@@ -93,6 +97,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                 return super.visitElement(element)
             }
             for ((i, target) in targets.withIndex()) {
+                if (target is PsiPackage) continue
                 val referenceInfo = referenceInfos[i]
                 if (referenceInfo === ReferenceInfo.UNKNOWN && element !== target
                     && reference !is KtDefaultAnnotationArgumentReference
@@ -123,7 +128,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
     }
 
     private fun PsiElement.formatToStr(): String {
-        val fqName =  when {
+        val fqName = when {
             this is PsiFile -> virtualFile.path.removePrefix(input.canonicalPath)
             this is PsiQualifiedNamedElement && qualifiedName != null ->
                 qualifiedName!!
@@ -143,6 +148,14 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                 val name = getContainingClassOrObject().name!!
                 fqName.asString() + "." + name
             }
+
+            this is KtProperty ->
+                if (isLocal) {
+                    // TODO
+                    null
+                } else {
+                    fqName?.asString()
+                }
 
             else -> null
         }

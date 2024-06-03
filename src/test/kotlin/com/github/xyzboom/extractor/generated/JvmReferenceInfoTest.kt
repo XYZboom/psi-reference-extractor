@@ -105,6 +105,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
                 )
             }
     
+            @Test
+            fun test_kotlinAccessKotlinProperty0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\access\kotlinAccessKotlinProperty0"""))
+                doValidate(
+                    """src\testData\jvm\expression\access\kotlinAccessKotlinProperty0\result""",
+                    null
+                )
+            }
+    
     
         }
         
