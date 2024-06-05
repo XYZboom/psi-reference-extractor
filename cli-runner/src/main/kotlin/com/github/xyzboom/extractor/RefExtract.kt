@@ -127,38 +127,54 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
         return "${containingPath.removePrefix(inputPath)}:${startLine + 1}:${startCol + 1}"
     }
 
-    private fun PsiElement.formatToStr(): String {
-        val fqName = when {
-            this is PsiFile -> virtualFile.path.removePrefix(input.canonicalPath)
-            this is PsiQualifiedNamedElement && qualifiedName != null ->
-                qualifiedName!!
+    private fun PsiElement.getMyFqName(): String? = when {
+        this is PsiFile -> virtualFile.path.removePrefix(input.canonicalPath)
+        this is PsiQualifiedNamedElement && qualifiedName != null ->
+            qualifiedName!!
 
-            this is KtLightElement<*, *> && kotlinOrigin != null ->
-                kotlinOrigin!!.formatToStr()
+        this is KtLightElement<*, *> && kotlinOrigin != null ->
+            kotlinOrigin!!.formatToStr()
 
-            this is PsiMember && containingClass != null ->
-                containingClass!!.qualifiedName + "." + name
+        this is PsiMember && containingClass != null ->
+            containingClass!!.getMyFqName() + "." + name
 
-            this is KtNamedDeclaration && fqName != null ->
+        this is KtNamedDeclaration ->
+            if (fqName != null) {
                 fqName!!.asString()
+            } else {
+                when {
+                    this is KtProperty ->
+                        if (isLocal) {
+                            // TODO
+                            null
+                        } else {
+                            fqName?.asString()
+                        }
 
-            this is KtConstructor<*> && getContainingClassOrObject().fqName != null
-                    && getContainingClassOrObject().name != null -> {
-                val fqName = getContainingClassOrObject().fqName!!
-                val name = getContainingClassOrObject().name!!
-                fqName.asString() + "." + name
+                    this is KtConstructor<*> && getContainingClassOrObject().fqName != null
+                            && getContainingClassOrObject().name != null -> {
+                        val fqName = getContainingClassOrObject().fqName!!
+                        val name = getContainingClassOrObject().name!!
+                        fqName.asString() + "." + name
+                    }
+
+                    else -> {
+                        val context = context
+                        val contextParent = context?.parent
+                        if (contextParent is KtNamedDeclaration) {
+                            contextParent.fqName?.asString() + "." + name
+                        } else {
+                            null
+                        }
+                    }
+                }
             }
 
-            this is KtProperty ->
-                if (isLocal) {
-                    // TODO
-                    null
-                } else {
-                    fqName?.asString()
-                }
+        else -> null
+    }
 
-            else -> null
-        }
+    private fun PsiElement.formatToStr(): String {
+        val fqName = getMyFqName()
         return if (fqName == null) {
             posStrWithoutFilePrefix()
         } else {
