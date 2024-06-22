@@ -359,15 +359,29 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     
     
         }
+        
+        @Nested
+        inner class TypeCheckTest {
             @Test
-        fun test_typeCheck() {
-            initCompilerEnv(Path.of("""src\testData\jvm\expression\typeCheck"""))
-            doValidate(
-                """src\testData\jvm\expression\typeCheck\result""",
-                null
-            )
-        }
+            fun test_typeCheck0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\typeCheck\typeCheck0"""))
+                doValidate(
+                    """src\testData\jvm\expression\typeCheck\typeCheck0\result""",
+                    null
+                )
+            }
     
+            @Test
+            fun test_typeCheck1() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\typeCheck\typeCheck1"""))
+                doValidate(
+                    """src\testData\jvm\expression\typeCheck\typeCheck1\result""",
+                    null
+                )
+            }
+    
+    
+        }
     
     }
         
