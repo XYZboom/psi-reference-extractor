@@ -368,6 +368,47 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     }
         
     @Nested
+    inner class GenericTest {
+        @Test
+        fun test_generic0() {
+            initCompilerEnv(Path.of("""src\testData\jvm\generic\generic0"""))
+            doValidate(
+                """src\testData\jvm\generic\generic0\result""",
+                null
+            )
+        }
+    
+        @Test
+        fun test_generic3() {
+            initCompilerEnv(Path.of("""src\testData\jvm\generic\generic3"""))
+            doValidate(
+                """src\testData\jvm\generic\generic3\result""",
+                null
+            )
+        }
+    
+        @Test
+        fun test_generic4() {
+            initCompilerEnv(Path.of("""src\testData\jvm\generic\generic4"""))
+            doValidate(
+                """src\testData\jvm\generic\generic4\result""",
+                null
+            )
+        }
+    
+        @Test
+        fun test_generic5() {
+            initCompilerEnv(Path.of("""src\testData\jvm\generic\generic5"""))
+            doValidate(
+                """src\testData\jvm\generic\generic5\result""",
+                null
+            )
+        }
+    
+    
+    }
+        
+    @Nested
     inner class ImportTest {
         @Test
         fun test_import0() {

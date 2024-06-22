@@ -75,6 +75,7 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
                 resolvedTarget.language, resolvedTarget.targetType
             )
         }
+
         element.parent is PsiReferenceList ->
             when (element.parent.elementType) {
                 JavaStubElementTypes.EXTENDS_LIST ->
@@ -84,6 +85,16 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
                             resolvedTarget.language, resolvedTarget.targetType
                         )
                     }
+
+                JavaStubElementTypes.EXTENDS_BOUND_LIST -> {
+                    resolvedTargets.map { resolvedTarget ->
+                        ReferenceInfo(
+                            JavaLanguage.INSTANCE, Class, TypeParameter,
+                            resolvedTarget.language, resolvedTarget.targetType
+                        )
+                    }
+                }
+
                 else -> resolvedTargets.map { UNKNOWN }
             }
 
@@ -128,6 +139,34 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
                             JavaLanguage.INSTANCE,
                             sourceType,
                             Parameter,
+                            resolvedTarget.language,
+                            resolvedTarget.targetType
+                        )
+                    }
+                }
+
+                parent2 is PsiTypeElement || parent2 is PsiParameterList
+                        || parent2 is PsiReferenceParameterList -> {
+                    val sourceType = when {
+                        element.getParentOfType<PsiLocalVariable>(false) != null -> {
+                            LocalVariable
+                        }
+
+                        element.getParentOfType<PsiMethod>(false) != null -> {
+                            Method
+                        }
+
+                        element.getParentOfType<PsiClass>(false) != null -> {
+                            Class
+                        }
+
+                        else -> Unknown
+                    }
+                    resolvedTargets.map { resolvedTarget ->
+                        ReferenceInfo(
+                            JavaLanguage.INSTANCE,
+                            sourceType,
+                            TypeParameter,
                             resolvedTarget.language,
                             resolvedTarget.targetType
                         )
@@ -321,6 +360,13 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
                 targetLanguage,
                 targetType
             )
+        } else if (element.getParentOfType<KtTypeParameter>(false) != null) {
+            val sourceType = element.getParentOfType<KtTypeParameterList>(false)!!.parent.sourceType
+            ReferenceInfo(
+                KotlinLanguage.INSTANCE, sourceType,
+                TypeParameter,
+                targetLanguage, targetType
+            )
         } else if (element.getParentOfType<KtImportList>(false) != null) {
             ReferenceInfo(KotlinLanguage.INSTANCE, File, Import, targetLanguage, targetType)
         } else if (element.getParentOfType<KtSuperTypeEntry>(false) != null) {
@@ -328,9 +374,11 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
                 Class -> {
                     ReferenceInfo(KotlinLanguage.INSTANCE, Class, Extend, targetLanguage, targetType)
                 }
+
                 Interface -> {
                     ReferenceInfo(KotlinLanguage.INSTANCE, Class, Implement, targetLanguage, targetType)
                 }
+
                 else -> {
                     ReferenceInfo(KotlinLanguage.INSTANCE, Class, Unknown, targetLanguage, targetType)
                 }
@@ -373,6 +421,24 @@ private fun KtSimpleNameReference.getReferenceInfos(resolvedTargets: List<PsiEle
 val PsiElement.sourceType: IReferenceSourceType
     get() = when (this) {
         is KtConstructor<*> -> Constructor
+        is KtClassOrObject ->
+            when (this) {
+                is KtClass -> when {
+                    isInterface() -> Interface
+                    isAnnotation() -> Annotation
+                    else -> Class
+                }
+
+                else -> Class
+            }
+
+        is PsiClass ->
+            when {
+                isAnnotationType -> Annotation
+                isInterface -> Interface
+                else -> Class
+            }
+
         is KtProperty ->
             if (isLocal) {
                 LocalVariable

@@ -1,3 +1,3 @@
 package com.github.xyzboom.extractor.types
 
-data object Annotation : IReferenceTargetType
+data object Annotation : IReferenceTargetType, IReferenceSourceType
