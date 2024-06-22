@@ -254,6 +254,20 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
         }
         
         @Nested
+        inner class CastTest {
+            @Test
+            fun test_cast0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\cast\cast0"""))
+                doValidate(
+                    """src\testData\jvm\expression\cast\cast0\result""",
+                    null
+                )
+            }
+    
+    
+        }
+        
+        @Nested
         inner class CreateTest {
             @Test
             fun test_create0() {

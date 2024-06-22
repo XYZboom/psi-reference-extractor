@@ -173,6 +173,18 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
                     }
                 }
 
+                parent2 is PsiTypeCastExpression -> {
+                    resolvedTargets.map { resolvedTarget ->
+                        ReferenceInfo(
+                            JavaLanguage.INSTANCE,
+                            Expression,
+                            Cast,
+                            resolvedTarget.language,
+                            resolvedTarget.targetType
+                        )
+                    }
+                }
+
                 else -> {
                     resolvedTargets.map {
                         UNKNOWN
