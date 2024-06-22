@@ -53,6 +53,12 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
     @CommandLine.Option(names = ["-eu", "--export-unknown"], description = ["export unknown references"])
     var exportUnknown: Boolean = false
 
+    @CommandLine.Option(
+        names = ["-en", "--export-not-in-project"],
+        description = ["export entities not in project"]
+    )
+    var exportNotInProject: Boolean = false
+
     val elementGraph = DirectedWeightedMultigraph<PsiElement, GrammarOrRefEdge>(GrammarOrRefEdge::class.java)
     val dependElements = HashSet<PsiElement>()
 
@@ -107,6 +113,9 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                 }
                 if (referenceInfo != ReferenceInfo.UNKNOWN || exportUnknown) {
                     if (target !in elementGraph.vertexSet()) {
+                        if (!exportNotInProject) {
+                            continue
+                        }
                         elementGraph.addVertex(target)
                         dependElements.add(target)
                     }
