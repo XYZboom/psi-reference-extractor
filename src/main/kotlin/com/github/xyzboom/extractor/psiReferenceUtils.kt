@@ -25,6 +25,8 @@ import com.intellij.psi.PsiPolyVariantReference
 import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceExpression
 import com.intellij.psi.PsiReferenceList
+import com.intellij.psi.PsiType
+import com.intellij.psi.PsiTypeElement
 import com.intellij.psi.impl.java.stubs.JavaStubElementTypes
 import com.intellij.psi.util.elementType
 import org.jetbrains.kotlin.asJava.elements.KtLightElement
@@ -98,6 +100,23 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
                         )
                     }
                 else -> resolvedTargets.map { UNKNOWN }
+            }
+
+        element.parent is PsiTypeElement ->
+            if (element.parent.parent is PsiField) {
+                resolvedTargets.map { resolvedTarget ->
+                    ReferenceInfo(
+                        JavaLanguage.INSTANCE,
+                        Field,
+                        FieldTyped,
+                        resolvedTarget.language,
+                        resolvedTarget.targetType
+                    )
+                }
+            } else {
+                resolvedTargets.map {
+                    UNKNOWN
+                }
             }
 
         else -> resolvedTargets.map { resolvedTarget ->
@@ -336,6 +355,14 @@ val PsiElement.sourceType: IReferenceSourceType
 
             parent is PsiReferenceList && parent.elementType == JavaStubElementTypes.EXTENDS_LIST -> {
                 Class
+            }
+
+            parent is PsiTypeElement -> {
+                val parent2 = parent.parent
+                when {
+                    parent2 is PsiField -> Field
+                    else -> Unknown
+                }
             }
 
             else -> Unknown

@@ -503,6 +503,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     @Nested
     inner class PropertyTest {
         @Test
+        fun test_fieldTyped() {
+            initCompilerEnv(Path.of("""src\testData\jvm\property\fieldTyped"""))
+            doValidate(
+                """src\testData\jvm\property\fieldTyped\result""",
+                null
+            )
+        }
+    
+        @Test
         fun test_javaFieldAsProperty() {
             initCompilerEnv(Path.of("""src\testData\jvm\property\javaFieldAsProperty"""))
             doValidate(
