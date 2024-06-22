@@ -551,6 +551,20 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     }
         
     @Nested
+    inner class LocalVariableTest {
+        @Test
+        fun test_localVariable0() {
+            initCompilerEnv(Path.of("""src\testData\jvm\localVariable\localVariable0"""))
+            doValidate(
+                """src\testData\jvm\localVariable\localVariable0\result""",
+                null
+            )
+        }
+    
+    
+    }
+        
+    @Nested
     inner class ParameterTest {
         @Test
         fun test_constructorParameter0() {

@@ -103,6 +103,18 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
             val parent3 = parent2.parent
             val parent4 = parent3.parent
             when {
+                parent2 is PsiLocalVariable -> {
+                    resolvedTargets.map { resolvedTarget ->
+                        ReferenceInfo(
+                            JavaLanguage.INSTANCE,
+                            LocalVariable,
+                            LocalVariableTyped,
+                            resolvedTarget.language,
+                            resolvedTarget.targetType
+                        )
+                    }
+                }
+
                 parent2 is PsiField -> {
                     resolvedTargets.map { resolvedTarget ->
                         ReferenceInfo(
