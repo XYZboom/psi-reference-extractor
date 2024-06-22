@@ -88,6 +88,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
             }
     
             @Test
+            fun test_javaAccessJavaField1() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\access\javaAccessJavaField1"""))
+                doValidate(
+                    """src\testData\jvm\expression\access\javaAccessJavaField1\result""",
+                    null
+                )
+            }
+    
+            @Test
             fun test_javaAccessKotlinClass() {
                 initCompilerEnv(Path.of("""src\testData\jvm\expression\access\javaAccessKotlinClass"""))
                 doValidate(

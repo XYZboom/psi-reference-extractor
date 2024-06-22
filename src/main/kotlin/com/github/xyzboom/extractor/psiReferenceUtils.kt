@@ -172,7 +172,10 @@ private fun PsiReferenceExpression.getReferenceInfos(resolvedTargets: List<PsiEl
                 ReferenceInfo(JavaLanguage.INSTANCE, Expression, Access, it.language, it.targetType)
             }
         } else {
-            listOf(UNKNOWN)
+            // TODO some other cases
+            resolvedTargets.map {
+                ReferenceInfo(JavaLanguage.INSTANCE, Expression, Access, it.language, it.targetType)
+            }
         }
     }
 
