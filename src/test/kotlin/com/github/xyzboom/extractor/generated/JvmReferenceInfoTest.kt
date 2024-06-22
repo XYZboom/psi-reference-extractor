@@ -359,6 +359,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
     
     
         }
+            @Test
+        fun test_typeCheck() {
+            initCompilerEnv(Path.of("""src\testData\jvm\expression\typeCheck"""))
+            doValidate(
+                """src\testData\jvm\expression\typeCheck\result""",
+                null
+            )
+        }
+    
     
     }
         
