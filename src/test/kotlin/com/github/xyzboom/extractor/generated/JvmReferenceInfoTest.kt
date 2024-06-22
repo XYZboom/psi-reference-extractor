@@ -378,6 +378,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
             )
         }
     
+        @Test
+        fun test_import1() {
+            initCompilerEnv(Path.of("""src\testData\jvm\import\import1"""))
+            doValidate(
+                """src\testData\jvm\import\import1\result""",
+                null
+            )
+        }
+    
     
         @Nested
         inner class KotlinImportKotlinTopLevelsTest {

@@ -142,6 +142,18 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
             }
         }
 
+        element.parent is PsiImportStatement -> {
+            resolvedTargets.map { resolvedTarget ->
+                ReferenceInfo(
+                    JavaLanguage.INSTANCE,
+                    File,
+                    Import,
+                    resolvedTarget.language,
+                    resolvedTarget.targetType
+                )
+            }
+        }
+
         else -> resolvedTargets.map { resolvedTarget ->
             val sourceType = element.sourceType
             when (resolvedTarget.targetType) {
