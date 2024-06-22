@@ -579,6 +579,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
             )
         }
     
+        @Test
+        fun test_methodReturn2() {
+            initCompilerEnv(Path.of("""src\testData\jvm\return\methodReturn2"""))
+            doValidate(
+                """src\testData\jvm\return\methodReturn2\result""",
+                null
+            )
+        }
+    
     
     }
     

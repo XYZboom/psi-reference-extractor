@@ -102,22 +102,39 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
                 else -> resolvedTargets.map { UNKNOWN }
             }
 
-        element.parent is PsiTypeElement ->
-            if (element.parent.parent is PsiField) {
-                resolvedTargets.map { resolvedTarget ->
-                    ReferenceInfo(
-                        JavaLanguage.INSTANCE,
-                        Field,
-                        FieldTyped,
-                        resolvedTarget.language,
-                        resolvedTarget.targetType
-                    )
+        element.parent is PsiTypeElement -> {
+            val parent2 = element.parent.parent
+            when {
+                parent2 is PsiField -> {
+                    resolvedTargets.map { resolvedTarget ->
+                        ReferenceInfo(
+                            JavaLanguage.INSTANCE,
+                            Field,
+                            FieldTyped,
+                            resolvedTarget.language,
+                            resolvedTarget.targetType
+                        )
+                    }
                 }
-            } else {
-                resolvedTargets.map {
-                    UNKNOWN
+                parent2 is PsiMethod -> {
+                    resolvedTargets.map { resolvedTarget ->
+                        ReferenceInfo(
+                            JavaLanguage.INSTANCE,
+                            Method,
+                            Return,
+                            resolvedTarget.language,
+                            resolvedTarget.targetType
+                        )
+                    }
+                }
+
+                else -> {
+                    resolvedTargets.map {
+                        UNKNOWN
+                    }
                 }
             }
+        }
 
         else -> resolvedTargets.map { resolvedTarget ->
             val sourceType = element.sourceType
@@ -361,6 +378,7 @@ val PsiElement.sourceType: IReferenceSourceType
                 val parent2 = parent.parent
                 when {
                     parent2 is PsiField -> Field
+                    parent2 is PsiMethod -> Method
                     else -> Unknown
                 }
             }
