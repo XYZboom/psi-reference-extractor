@@ -11,22 +11,7 @@ import com.github.xyzboom.kotlin.reference.KtFunctionReturnReference
 import com.github.xyzboom.kotlin.reference.KtPropertyTypedReference
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.util.Key
-import com.intellij.psi.PsiAnnotation
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiField
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiIdentifier
-import com.intellij.psi.PsiJavaReference
-import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiMethodCallExpression
-import com.intellij.psi.PsiNewExpression
-import com.intellij.psi.PsiPolyVariantReference
-import com.intellij.psi.PsiReference
-import com.intellij.psi.PsiReferenceExpression
-import com.intellij.psi.PsiReferenceList
-import com.intellij.psi.PsiType
-import com.intellij.psi.PsiTypeElement
+import com.intellij.psi.*
 import com.intellij.psi.impl.java.stubs.JavaStubElementTypes
 import com.intellij.psi.util.elementType
 import org.jetbrains.kotlin.asJava.elements.KtLightElement
@@ -104,6 +89,8 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
 
         element.parent is PsiTypeElement -> {
             val parent2 = element.parent.parent
+            val parent3 = parent2.parent
+            val parent4 = parent3.parent
             when {
                 parent2 is PsiField -> {
                     resolvedTargets.map { resolvedTarget ->
@@ -116,12 +103,31 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
                         )
                     }
                 }
+
                 parent2 is PsiMethod -> {
                     resolvedTargets.map { resolvedTarget ->
                         ReferenceInfo(
                             JavaLanguage.INSTANCE,
                             Method,
                             Return,
+                            resolvedTarget.language,
+                            resolvedTarget.targetType
+                        )
+                    }
+                }
+
+                parent2 is PsiParameter && parent3 is PsiParameterList
+                        && parent4 is PsiMethod -> {
+                    val sourceType = if (parent4.isConstructor) {
+                        Constructor
+                    } else {
+                        Method
+                    }
+                    resolvedTargets.map { resolvedTarget ->
+                        ReferenceInfo(
+                            JavaLanguage.INSTANCE,
+                            sourceType,
+                            Parameter,
                             resolvedTarget.language,
                             resolvedTarget.targetType
                         )

@@ -498,10 +498,28 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
         }
     
         @Test
+        fun test_constructorParameter2() {
+            initCompilerEnv(Path.of("""src\testData\jvm\parameter\constructorParameter2"""))
+            doValidate(
+                """src\testData\jvm\parameter\constructorParameter2\result""",
+                null
+            )
+        }
+    
+        @Test
         fun test_methodParameter0() {
             initCompilerEnv(Path.of("""src\testData\jvm\parameter\methodParameter0"""))
             doValidate(
                 """src\testData\jvm\parameter\methodParameter0\result""",
+                null
+            )
+        }
+    
+        @Test
+        fun test_methodParameter1() {
+            initCompilerEnv(Path.of("""src\testData\jvm\parameter\methodParameter1"""))
+            doValidate(
+                """src\testData\jvm\parameter\methodParameter1\result""",
                 null
             )
         }
