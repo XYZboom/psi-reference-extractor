@@ -55,6 +55,13 @@ class GranularityConverter : ConverterFromMap<TypedRefExtractor<PsiElement, Gram
                 { it.referenceInfo == null },
                 { it.referenceInfo != null },
                 GrammarOrRefEdge::class.java
+            ),
+            "all" to TypedRefExtractor(
+                "all", { _, _ -> true },
+                { _, _ -> true },
+                { it.referenceInfo == null },
+                { true },
+                GrammarOrRefEdge::class.java
             )
         )
     }

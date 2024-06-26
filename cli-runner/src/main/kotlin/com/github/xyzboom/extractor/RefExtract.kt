@@ -1,32 +1,31 @@
 package com.github.xyzboom.extractor
 
+import com.github.xyzboom.extractor.converter.ElementFormatConverter
 import com.github.xyzboom.extractor.converter.ExporterConverter
 import com.github.xyzboom.extractor.converter.GranularityConverter
 import com.github.xyzboom.extractor.types.*
+import com.github.xyzboom.format.IPsiFormatter
 import com.github.xyzboom.ktcutils.KotlinJvmCompilerContext
 import com.intellij.psi.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.kotlin.asJava.elements.KtLightElement
-import org.jetbrains.kotlin.asJava.elements.KtLightMember
 import org.jetbrains.kotlin.idea.references.KtDefaultAnnotationArgumentReference
 import org.jetbrains.kotlin.psi.KtConstructor
-import org.jetbrains.kotlin.psi.KtElement
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import org.jetbrains.kotlin.psi.KtProperty
-import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
-import org.jetbrains.kotlin.psi.psiUtil.getQualifiedElementSelector
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jgrapht.graph.DirectedWeightedMultigraph
 import org.jgrapht.nio.DefaultAttribute
 import picocli.CommandLine
+import picocli.CommandLine.IFactory
 import java.io.File
 import java.io.FileWriter
 import java.io.Writer
+import java.lang.Class
 import kotlin.time.measureTime
 
 @CommandLine.Command(name = "RefExtract")
-class RefExtract : Runnable, KotlinJvmCompilerContext() {
+class RefExtract : Runnable, KotlinJvmCompilerContext(), IFactory {
     private val logger = KotlinLogging.logger {}
 
     @CommandLine.Parameters(index = "0", description = ["input directory"])
@@ -38,12 +37,12 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
     @CommandLine.Option(
         names = ["-g", "--granularity"],
         split = ",", converter = [GranularityConverter::class], defaultValue = "file",
-        description = ["granularity, choose in [file, class, member, expression]"]
+        description = ["granularity, choose in [file, class, member, expression, all]"]
     )
     lateinit var granularity: Array<TypedRefExtractor<PsiElement, GrammarOrRefEdge>>
 
     @CommandLine.Option(
-        names = ["-f", "--format"],
+        names = ["-ff", "--file-format"],
         split = ",",
         converter = [ExporterConverter::class],
         defaultValue = "json"
@@ -58,6 +57,14 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
         description = ["export entities not in project"]
     )
     var exportNotInProject: Boolean = false
+
+    @CommandLine.Option(
+        names = ["-ef", "--element-format"],
+        defaultValue = "qualified-name",
+        converter = [ElementFormatConverter::class],
+        description = ["how to format element, choose in [qualified-name, leaf-text-only]"],
+    )
+    lateinit var elementFormat: IPsiFormatter
 
     val elementGraph = DirectedWeightedMultigraph<PsiElement, GrammarOrRefEdge>(GrammarOrRefEdge::class.java)
     val dependElements = HashSet<PsiElement>()
@@ -243,12 +250,12 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
                 val graph = extractor.doExtractor(elementGraph, allPsiFiles)
                 exporters.forEach { exporter ->
                     exporter.setVertexAttributeProvider {
-                        val labelText = if (it in dependElements) {
-                            "${it.formatToStr()} (Not in project)"
-                        } else it.formatToStr()
+                        val labelText = elementFormat.format(it)
+                            ?: return@setVertexAttributeProvider mutableMapOf()
                         mutableMapOf("label" to DefaultAttribute.createAttribute(labelText))
                     }
                     exporter.setEdgeAttributeProvider {
+                        it.referenceInfo ?: return@setEdgeAttributeProvider mutableMapOf()
                         mutableMapOf("label" to DefaultAttribute.createAttribute(it.referenceInfo.toString()))
                     }
                     val outputFile = if (output.isDirectory) {
@@ -280,5 +287,21 @@ class RefExtract : Runnable, KotlinJvmCompilerContext() {
         for ((type, count) in countMap) {
             logger.trace { "$type: $count" }
         }
+    }
+
+    override fun <K : Any> create(clazz: Class<K>): K {
+        if (clazz == ElementFormatConverter::class.java) {
+            @Suppress("UNCHECKED_CAST")
+            return ElementFormatConverter(
+                { element -> element.formatToStr() },
+                { element ->
+                    if (element.children.isEmpty()) {
+                        return@ElementFormatConverter element.text
+                    }
+                    return@ElementFormatConverter null
+                }
+            ) as K
+        }
+        return CommandLine.defaultFactory().create(clazz)
     }
 }
