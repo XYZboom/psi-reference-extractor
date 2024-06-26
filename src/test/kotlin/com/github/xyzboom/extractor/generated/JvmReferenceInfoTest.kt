@@ -106,6 +106,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
             }
     
             @Test
+            fun test_javaForEachAccess0() {
+                initCompilerEnv(Path.of("""src\testData\jvm\expression\access\javaForEachAccess0"""))
+                doValidate(
+                    """src\testData\jvm\expression\access\javaForEachAccess0\result""",
+                    null
+                )
+            }
+    
+            @Test
             fun test_kotlinAccessJavaMethod0() {
                 initCompilerEnv(Path.of("""src\testData\jvm\expression\access\kotlinAccessJavaMethod0"""))
                 doValidate(

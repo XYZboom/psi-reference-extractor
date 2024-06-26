@@ -15,7 +15,6 @@ import com.intellij.psi.*
 import com.intellij.psi.impl.java.stubs.JavaStubElementTypes
 import com.intellij.psi.util.elementType
 import org.jetbrains.kotlin.asJava.elements.KtLightElement
-import org.jetbrains.kotlin.asJava.elements.KtLightMember
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.references.*
 import org.jetbrains.kotlin.psi.*
@@ -210,8 +209,14 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
                 }
 
                 else -> {
-                    resolvedTargets.map {
-                        UNKNOWN
+                    resolvedTargets.map { resolvedTarget ->
+                        ReferenceInfo(
+                            JavaLanguage.INSTANCE,
+                            Expression,
+                            Access,
+                            resolvedTarget.language,
+                            resolvedTarget.targetType
+                        )
                     }
                 }
             }
