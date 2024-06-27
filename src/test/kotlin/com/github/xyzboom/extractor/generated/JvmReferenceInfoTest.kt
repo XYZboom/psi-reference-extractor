@@ -535,6 +535,15 @@ class JvmReferenceInfoTest : BaseJvmReferenceInfoTester() {
         }
     
         @Test
+        fun test_implement0() {
+            initCompilerEnv(Path.of("""src\testData\jvm\inherit\implement0"""))
+            doValidate(
+                """src\testData\jvm\inherit\implement0\result""",
+                null
+            )
+        }
+    
+        @Test
         fun test_inherit0() {
             initCompilerEnv(Path.of("""src\testData\jvm\inherit\inherit0"""))
             doValidate(

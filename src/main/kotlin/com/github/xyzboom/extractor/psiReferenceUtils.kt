@@ -85,6 +85,14 @@ fun PsiJavaReference.getReferenceInfos(resolvedTargets: List<PsiElement>): List<
                         )
                     }
 
+                JavaStubElementTypes.IMPLEMENTS_LIST ->
+                    resolvedTargets.map { resolvedTarget ->
+                        ReferenceInfo(
+                            JavaLanguage.INSTANCE, Class, Implement,
+                            resolvedTarget.language, resolvedTarget.targetType
+                        )
+                    }
+
                 JavaStubElementTypes.EXTENDS_BOUND_LIST -> {
                     resolvedTargets.map { resolvedTarget ->
                         ReferenceInfo(
