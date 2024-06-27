@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jgrapht.graph.DirectedWeightedMultigraph
+import org.jgrapht.nio.Attribute
 import org.jgrapht.nio.DefaultAttribute
 import picocli.CommandLine
 import picocli.CommandLine.IFactory
@@ -62,7 +63,10 @@ class RefExtract : Runnable, KotlinJvmCompilerContext(), IFactory {
         names = ["-ef", "--element-format"],
         defaultValue = "qualified-name",
         converter = [ElementFormatConverter::class],
-        description = ["how to format element, choose in [qualified-name, leaf-text-only]"],
+        description = ["how to format element, choose in [" +
+                "qualified-name, " +
+                "leaf-text-only, " +
+                "leaf-text-and-qualified-name]"],
     )
     lateinit var elementFormat: IPsiFormatter
 
@@ -250,9 +254,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext(), IFactory {
                 val graph = extractor.doExtractor(elementGraph, allPsiFiles)
                 exporters.forEach { exporter ->
                     exporter.setVertexAttributeProvider {
-                        val labelText = elementFormat.format(it)
-                            ?: return@setVertexAttributeProvider mutableMapOf()
-                        mutableMapOf("label" to DefaultAttribute.createAttribute(labelText))
+                        elementFormat.format(it)
                     }
                     exporter.setEdgeAttributeProvider {
                         it.referenceInfo ?: return@setEdgeAttributeProvider mutableMapOf()
@@ -293,12 +295,29 @@ class RefExtract : Runnable, KotlinJvmCompilerContext(), IFactory {
         if (clazz == ElementFormatConverter::class.java) {
             @Suppress("UNCHECKED_CAST")
             return ElementFormatConverter(
-                { element -> element.formatToStr() },
                 { element ->
+                    mutableMapOf(
+                        "qualified-name" to DefaultAttribute.createAttribute(element.formatToStr())
+                    )
+                },
+                leafTextAndQualifiedName@{ element ->
                     if (element.children.isEmpty()) {
-                        return@ElementFormatConverter element.text
+                        return@leafTextAndQualifiedName mutableMapOf(
+                            "text" to DefaultAttribute.createAttribute(element.text)
+                        )
                     }
-                    return@ElementFormatConverter null
+                    return@leafTextAndQualifiedName mutableMapOf()
+                },
+                leafTextAndQualifiedName@{ element ->
+                    val result = HashMap<String, Attribute>()
+                    if (element.children.isEmpty()) {
+                        result["text"] = DefaultAttribute.createAttribute(element.text)
+                    }
+                    val fqName = element.getMyFqName()
+                    if (fqName != null) {
+                        result["qualified-name"] = DefaultAttribute.createAttribute(fqName)
+                    }
+                    result
                 }
             ) as K
         }
