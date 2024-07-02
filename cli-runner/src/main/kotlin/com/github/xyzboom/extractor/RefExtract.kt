@@ -43,7 +43,7 @@ class RefExtract : Runnable, KotlinJvmCompilerContext(), IFactory {
     lateinit var granularity: Array<TypedRefExtractor<PsiElement, GrammarOrRefEdge>>
 
     @CommandLine.Option(
-        names = ["-ff", "--file-format"],
+        names = ["-f", "--file-format"],
         split = ",",
         converter = [ExporterConverter::class],
         defaultValue = "json"
