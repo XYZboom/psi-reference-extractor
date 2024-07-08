@@ -148,7 +148,8 @@ class RefExtract : Runnable, KotlinJvmCompilerContext(), IFactory {
     }
 
     private fun PsiElement.getMyFqName(): String? = when {
-        this is PsiFile -> virtualFile.path.removePrefix(input.canonicalPath)
+        this is PsiFile -> virtualFile.path.replace("\\", "/")
+            .removePrefix(input.canonicalPath.replace("\\", "/"))
         this is PsiQualifiedNamedElement && qualifiedName != null ->
             qualifiedName!!
 
