@@ -123,14 +123,17 @@ class RefExtract : Runnable, KotlinJvmCompilerContext(), IFactory {
                     logger.trace { "unknown reference info at source: ${element.posStr()}, target: ${target.posStr()}" }
                 }
                 if (referenceInfo != ReferenceInfo.UNKNOWN || exportUnknown) {
-                    if (target !in elementGraph.vertexSet()) {
+                    val convertedTarget = if (target is KtLightElement<*, *>) {
+                        target.kotlinOrigin ?: continue
+                    } else target
+                    if (convertedTarget !in elementGraph.vertexSet()) {
                         if (!exportNotInProject) {
                             continue
                         }
-                        elementGraph.addVertex(target)
-                        dependElements.add(target)
+                        elementGraph.addVertex(convertedTarget)
+                        dependElements.add(convertedTarget)
                     }
-                    elementGraph.addEdge(element, target, GrammarOrRefEdge(referenceInfo))
+                    elementGraph.addEdge(element, convertedTarget, GrammarOrRefEdge(referenceInfo))
                 }
             }
             super.visitElement(element)
