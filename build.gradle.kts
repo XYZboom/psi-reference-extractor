@@ -1,5 +1,6 @@
+val kotlinVersion: String = rootProject.extra["versions.kotlin"] as String
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.1.20"
     `maven-publish`
 }
 
@@ -80,7 +81,7 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic:1.4.14")
     implementation(project(":intellij-core"))
     implementation("org.jetbrains:annotations:24.0.0")
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion")
     implementation(project(":kt-references-analysis:extra-references"))
     testImplementation(project(":kotlin-compiler-context-utils"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")

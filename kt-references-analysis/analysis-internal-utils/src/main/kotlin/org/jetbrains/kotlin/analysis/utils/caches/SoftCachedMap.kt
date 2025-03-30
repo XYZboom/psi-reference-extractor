@@ -69,7 +69,7 @@ private class SoftCachedMapWithTrackers<K : Any, V : Any>(
 private class SoftCachedMapWithoutTrackers<K : Any, V : Any>(kind: Kind) : SoftCachedMap<K, V>() {
     private val cache = when (kind) {
         Kind.SOFT_KEYS_SOFT_VALUES -> ContainerUtil.createConcurrentSoftKeySoftValueMap<K, V>()
-        Kind.STRONG_KEYS_SOFT_VALUES -> SoftValueHashMap<K,V>();
+        Kind.STRONG_KEYS_SOFT_VALUES -> ContainerUtil.createSoftValueMap<K, V>()
     }
 
     override fun clear() {

@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+val kotlinVersion: String = rootProject.extra["versions.kotlin"] as String
 
 plugins {
     kotlin("jvm")
@@ -7,17 +7,7 @@ plugins {
 dependencies {
     api(project(":kt-references-analysis:analysis-api-impl-base"))
     api(project(":kt-references-analysis:analysis-internal-utils"))
-    api(project(":kt-references-analysis:kt-references-fe10"))
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
-}
-
-
-tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>> {
-    kotlinOptions {
-        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
-        freeCompilerArgs += "-Xcontext-receivers"
-        freeCompilerArgs += "-opt-in=org.jetbrains.kotlin.analysis.api.KtAnalysisApiInternals"
-    }
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion")
 }
 
 sourceSets {
@@ -25,19 +15,18 @@ sourceSets {
 
     }
 }
-
 tasks.withType<Test> {
     useJUnitPlatform()
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "17"
 }
 repositories {
     mavenCentral()
 }
 kotlin {
     jvmToolchain(17)
+    compilerOptions {
+        optIn.addAll(listOf("kotlin.RequiresOptIn", "org.jetbrains.kotlin.analysis.api.KtAnalysisApiInternals"))
+        freeCompilerArgs.add("-Xcontext-receivers")
+    }
 }
 
 

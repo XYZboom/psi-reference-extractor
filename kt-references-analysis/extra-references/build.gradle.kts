@@ -1,3 +1,5 @@
+val kotlinVersion: String = rootProject.extra["versions.kotlin"] as String
+
 plugins {
     kotlin("jvm")
 }
@@ -10,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion")
 }
 
 tasks.test {

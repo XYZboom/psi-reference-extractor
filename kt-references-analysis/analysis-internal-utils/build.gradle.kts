@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+val kotlinVersion: String = rootProject.extra["versions.kotlin"] as String
 
 plugins {
     kotlin("jvm")
@@ -6,7 +6,7 @@ plugins {
 }
 
 dependencies{
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion")
 }
 
 sourceSets {
@@ -14,13 +14,8 @@ sourceSets {
 
     }
 }
-
 tasks.withType<Test> {
     useJUnitPlatform()
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "17"
 }
 repositories {
     mavenCentral()

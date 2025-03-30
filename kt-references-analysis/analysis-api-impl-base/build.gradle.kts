@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+val kotlinVersion: String = rootProject.extra["versions.kotlin"] as String
 
 plugins {
     kotlin("jvm")
@@ -7,30 +7,30 @@ plugins {
 
 dependencies {
     api(project(":kt-references-analysis:analysis-api"))
-    compileOnly("org.jetbrains.kotlin:kotlin-compiler:1.9.22")
+    api(project(":kt-references-analysis:analysis-api-platform-interface"))
+    compileOnly("org.jetbrains.kotlin:kotlin-compiler:$kotlinVersion")
 }
-
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
-    kotlinOptions.freeCompilerArgs += "-opt-in=org.jetbrains.kotlin.analysis.api.KtAnalysisApiInternals"
-}
-
 sourceSets {
     main {
 
     }
 }
-
 tasks.withType<Test> {
     useJUnitPlatform()
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "17"
 }
 repositories {
     mavenCentral()
 }
 kotlin {
     jvmToolchain(17)
+    compilerOptions {
+        optIn.addAll(listOf(
+            "org.jetbrains.kotlin.analysis.api.KaImplementationDetail",
+            "org.jetbrains.kotlin.analysis.api.KaNonPublicApi",
+            "org.jetbrains.kotlin.analysis.api.KaIdeApi",
+            "org.jetbrains.kotlin.analysis.api.KaExperimentalApi",
+            "org.jetbrains.kotlin.analysis.api.KaPlatformInterface" // Platform interface is not stable yet
+        ))
+        freeCompilerArgs.add("-Xcontext-receivers")
+    }
 }

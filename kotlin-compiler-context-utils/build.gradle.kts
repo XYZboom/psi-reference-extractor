@@ -16,7 +16,6 @@ dependencies {
     api(project(":kt-references-analysis:analysis-api-fe10"))
     api(project(":kt-references-analysis:analysis-api-impl-base"))
     api(project(":kt-references-analysis:analysis-internal-utils"))
-    api(project(":kt-references-analysis:kt-references-fe10"))
     api(project(":kt-references-analysis:project-structure"))
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 }

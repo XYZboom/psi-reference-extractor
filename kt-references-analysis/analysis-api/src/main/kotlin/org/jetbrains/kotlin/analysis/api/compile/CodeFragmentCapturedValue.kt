@@ -5,9 +5,11 @@
 
 package org.jetbrains.kotlin.analysis.api.compile
 
+import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
 
+@KaExperimentalApi
 public sealed class CodeFragmentCapturedValue(
     public val name: String,
     public val isMutated: Boolean,
@@ -21,6 +23,7 @@ public sealed class CodeFragmentCapturedValue(
     }
 
     /** Represents a local variable or a parameter. */
+    @KaExperimentalApi
     public class Local(
         name: Name,
         isMutated: Boolean,
@@ -28,6 +31,7 @@ public sealed class CodeFragmentCapturedValue(
     ) : CodeFragmentCapturedValue(name.asString(), isMutated, isCrossingInlineBounds)
 
     /** Represents a delegated local variable (`val local by...`). */
+    @KaExperimentalApi
     public class LocalDelegate(
         name: Name,
         isMutated: Boolean,
@@ -38,6 +42,7 @@ public sealed class CodeFragmentCapturedValue(
     }
 
     /** Represents a backing field (a `field` variable inside a property accessor). */
+    @KaExperimentalApi
     public class BackingField(
         name: Name,
         isMutated: Boolean,
@@ -48,6 +53,7 @@ public sealed class CodeFragmentCapturedValue(
     }
 
     /** Represents a captured outer class. */
+    @KaExperimentalApi
     public class ContainingClass(
         private val classId: ClassId,
         isCrossingInlineBounds: Boolean,
@@ -60,6 +66,7 @@ public sealed class CodeFragmentCapturedValue(
     }
 
     /** Represents a captured super class (`super.foo()`). */
+    @KaExperimentalApi
     public class SuperClass(
         private val classId: ClassId,
         isCrossingInlineBounds: Boolean,
@@ -68,6 +75,7 @@ public sealed class CodeFragmentCapturedValue(
             get() = "super@" + classId.shortClassName.asString()
     }
 
+    @KaExperimentalApi
     public class ExtensionReceiver(
         labelName: String,
         isCrossingInlineBounds: Boolean,
@@ -76,6 +84,7 @@ public sealed class CodeFragmentCapturedValue(
             get() = "this@$name"
     }
 
+    @KaExperimentalApi
     public class ContextReceiver(
         public val index: Int,
         labelName: Name,
@@ -86,12 +95,14 @@ public sealed class CodeFragmentCapturedValue(
     }
 
     /** Represents an externally provided value. */
+    @KaExperimentalApi
     public class ForeignValue(
         name: Name,
         isCrossingInlineBounds: Boolean,
     ) : CodeFragmentCapturedValue(name.asString(), isMutated = false, isCrossingInlineBounds)
 
     /** Represents a `coroutineContext` call. */
+    @KaExperimentalApi
     public class CoroutineContext(
         isCrossingInlineBounds: Boolean
     ) : CodeFragmentCapturedValue("coroutineContext", isMutated = false, isCrossingInlineBounds)
